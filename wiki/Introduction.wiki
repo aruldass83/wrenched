@@ -1,0 +1,26 @@
+#summary what Wrenched really is
+
+= Introduction =
+
+none of the two-and-a-half major integration frameworks that exist to provide interoperability between Flex and Java, namely BlazeDS (and its commercial big brother LCDS) and GraniteDS, cover the full set of features developers need in their projects. examples are good enough, but when it comes to full scale RIAs, some of the key features are really lacking.
+
+Wrenched is based around BlazeDS and addresses client-server data exchange issues that typically arise in projects based on Flex and Java. currently Wrenched provides several key features.
+
+= Externalization =
+
+that' it. no more need to manually implement {{{java.io.Externalizable}}}. enjoy using GAS3 (which not only is the most powerful generator currently, but is also included in flexmojos-maven-plugin) and forget manually reimplementing your POJOs in actionscript. (de)serialization on the server side is properly done behind the scene.
+externalization in Wrenched includes full support for Maps and Enums (probably similar to GraniteDS, as it still uses {{{org.granite.util.Enum}}} and {{{org.granite.collections.IMap}}} for convenience) and provides an AS3 implementation of a HashMap.
+Wrenched works (and ever will be) only via AMF protocol. no xml, sorry ;P.
+
+  * full lazy-loading support that (unlike [http://code.google.com/p/dphibernate dpHibernate] for example) doesn't depend on any persistence provider (and actually works even _without_ a database if so configured) and still allows strong typing.
+
+all that is done with minimal configuration and practically without dependencies. currently Wrenched requires only BlazeDS (being sort of an extension of it and hence using quite few of its classes, especially transport), leaving other frameworks (like Spring or Hibernate) to be of developers' choice.
+
+
+
+
+
+
+= Credits =
+
+huge thanks to guys from [http://asmock.sourceforge.net ASMock] for their FLemit and FLoxy.
