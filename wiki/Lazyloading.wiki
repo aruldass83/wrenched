@@ -19,9 +19,11 @@ Wrenched provides a custom AMF channel, that instruments data as it passes throu
 
 thanks to provider pattern implementation, lazy loading in Wrenched is oblivious to the way entities are managed. you can even serialize entities to files and still lazy loading mechanism will work as long as you tell Wrenched how to use you own way.
 
-first lazy attribute loader (or LAL :D) has to be configured and fed with providers.  Lazy attribute providers are wrappers over user DAO classes. each provider manages a certain "domain" which is basically a package (or fully qualified class name). all the classes that are resolved to a domain will be managed by a single provider. this is convenient to have multiple providers for the same LAL. currently two predefined providers exist:
+first, lazy attribute loader (or LAL :D) has to be configured and fed with providers.  Lazy attribute providers are wrappers over user DAO classes. each provider manages a certain "domain" which is basically a package (or fully qualified class name). all the classes that are resolved to a domain will be managed by a single provider. this is convenient to have multiple providers for the same LAL. currently two predefined providers exist:
 
   * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`.
+
+LAL configuration for JPA could look like this for example:
 
 {{{
 <bean id="lazyAttributeLoaderService" class="com.wrenched.core.services.LazyAttributeLoader">
