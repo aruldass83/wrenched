@@ -56,7 +56,7 @@ LAL configuration for JPA could look like this for example:
 						<entry key="TestEntity#children" value="getTestChildren"/>
 					</map>
 				</property>
-				<property name="domain" value="foo.bar.other.domain"/
+				<property name="domain" value="foo.bar.other.domain"/>
 			</bean>
 		</list>
 	</property>
@@ -88,3 +88,5 @@ now that the server is configured to provide lazy loading, the client has to mak
 }}}
 
 for the implementation to be as generic as possible, each class and lazy attribute have to be registered in `com.wrenched.core.lazy.LazyAttributeRegistry`, specifying so-called "id-name" of the class additionally. in case of persistence-based providers that has to be the name of `@Id` attribute, but for method-based providers on the other hand this can be any convenient attribute name, as long as it suffices the underlying DAO method.
+
+after being registered, a lazy attribute will be fetched from the server when it's first asked for, otherwise it looks like a normal property, that can take part in bindings, etc.
