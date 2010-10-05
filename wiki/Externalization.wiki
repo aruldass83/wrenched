@@ -4,7 +4,7 @@ here and after i will be using Spring to demonstrate configuration snippets.
 
 so, how to configure externalization.
 
-== configuring transport ==
+== transport ==
 
 first a custom channel has to be added in BlazeDS' `services-config.xml`:
 
@@ -19,11 +19,11 @@ Wrenched provides a custom AMF endpoint, that is enriched with "knowledge" on ho
 
 this channel may be added to default channels, or you can use it explicitly in your Flex application.
 
-== configuring POJOs ==
+== POJOs ==
 
 well, the only thing that needs to be done here is subclassing `com.wrenched.core.domain.AbstractExternalizableEntity`, which is `java.io.Externalizable` and delegates all the externalization work to `com.wrenched.core.Externalizer` - custom (de)serializer that manages externalizable objects.
 
-== configuring decorators ==
+== decorators ==
 
 quite often a situation arise when you must exchange objects of classes that come from somewhere else. a jar file from the development team across the corridor, etc. there's little you can do with these classes in this case. and here comes Wrenched again, with externalizable decorator support.
 
