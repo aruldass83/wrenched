@@ -1,0 +1,88 @@
+#summary configuring lazy loading
+
+configuring lazy loading in Wrenched is a bit more complex and will require some coding, but not much.
+
+== transport ==
+
+as usual, a channel has to be configured in BlazeDS' `services-config.xml`, but in this case - on Flex side:
+{{{
+<channel-definition id="my-custom-amf"
+	class="com.wrenched.core.messaging.channels.LazyAMFChannel">
+	<endpoint url="http://{server.name}:{server.port}/{context.root}/messagebroker/amf"
+		class="flex.messaging.endpoints.AMFEndpoint" />
+</channel-definition>
+}}}
+
+Wrenched provides a custom AMF channel, that instruments data as it passes through.
+
+== providers ==
+
+thanks to provider pattern implementation, lazy loading in Wrenched is oblivious to the way entities are managed. you can even serialize entities to files and still lazy loading mechanism will work as long as you tell Wrenched how to use you own way.
+
+first lazy attribute loader (or LAL :D) has to be configured and fed with providers.  Lazy attribute providers are wrappers over user DAO classes. each provider manages a certain "domain" which is basically a package (or fully qualified class name). all the classes that are resolved to a domain will be managed by a single provider. this is convenient to have multiple providers for the same LAL. currently two predefined providers exist:
+
+  * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`.
+
+{{{
+<bean id="lazyAttributeLoaderService" class="com.wrenched.core.services.LazyAttributeLoader">
+	<property name="providers">
+		<list>
+			<bean class="com.wrenched.core.services.support.PersistenceBasedAttributeProvider" init-method="init">
+				<property name="delegate">
+					<bean factory-bean="entityManagerFactory" factory-method="createEntityManager"/>
+				</property>
+				<property name="domain" value="foo.bar.domain"/>
+				<property name="loaderMethodName" value="find"/>
+			</bean>
+		</list>
+	</property>
+</bean>
+}}}
+
+  * method-based provider, that will simply call a certain method on your DAO, assuming that this method accepts a single parameter - an id. the provider must be configured by associating a pair of entity and attribute names and method name. 
+
+{{{
+<bean id="lazyAttributeLoaderService" class="com.wrenched.core.services.LazyAttributeLoader">
+	<property name="providers">
+		<list>
+			<bean class="com.wrenched.core.services.support.MethodBasedAttributeProvider" init-method="init">
+				<property name="delegate">
+					<bean class="foo.bar.dao.EntityLoader"/>
+				</property>
+				<property name="methods">
+					<map>
+						<entry key="TestEntity#children" value="getTestChildren"/>
+					</map>
+				</property>
+				<property name="domain" value="foo.bar.other.domain"/
+			</bean>
+		</list>
+	</property>
+</bean>
+}}}
+
+== usage ==
+
+now that the server is configured to provide lazy loading, the client has to make use of it. client configuration actually consists of two lines of code that have to be executed during initialization phase of a Flex application:
+
+{{{
+<mx:Application creationComplete="onCreated();">
+	<mx:Script>
+		<![CDATA[
+			import foo.bar.TestEntity;
+			import com.wrenched.core.lazy.LazyAttributeRegistry;
+			
+			function onCreated():void {
+				LazyAttributeRegistry.instance(this.lazyAttributeLoader);
+				LazyAttributeRegistry.registerClass(TestEntity, "id", "children");
+			}
+		]]>
+	</mx:Script>
+
+	<mx:RemoteObject id="lazyAttributeLoader" destination="lazyAttributeLoaderService" showBusyCursor="true">
+        <mx:operation name="loadAttribute"/>
+    </mx:UIRemoteObject>
+</mx:Application>
+}}}
+
+for the implementation to be as generic as possible, each class and lazy attribute have to be registered in `com.wrenched.core.lazy.LazyAttributeRegistry`, specifying so-called "id-name" of the class additionally. in case of persistence-based providers that has to be the name of `@Id` attribute, but for method-based providers on the other hand this can be any convenient attribute name, as long as it suffices the underlying DAO method.
