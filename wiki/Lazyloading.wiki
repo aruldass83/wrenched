@@ -82,8 +82,8 @@ now that the server is configured to provide lazy loading, the client has to mak
 	</mx:Script>
 
 	<mx:RemoteObject id="lazyAttributeLoader" destination="lazyAttributeLoaderService" showBusyCursor="true">
-        <mx:operation name="loadAttribute"/>
-    </mx:UIRemoteObject>
+		<mx:operation name="loadAttribute"/>
+	</mx:RemoteObject>
 </mx:Application>
 }}}
 
