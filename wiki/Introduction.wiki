@@ -8,18 +8,21 @@ Wrenched is based around BlazeDS and addresses client-server data exchange issue
 
 = Externalization =
 
-that' it. no more need to manually implement {{{java.io.Externalizable}}}. enjoy using GAS3 (which not only is the most powerful generator currently, but is also included in flexmojos-maven-plugin) and forget manually reimplementing your POJOs in actionscript. (de)serialization on the server side is properly done behind the scene.
+no more need to manually implement {{{java.io.Externalizable}}} with all the concequences. enjoy using GAS3 (which not only is the most powerful generator currently, but is also included in flexmojos-maven-plugin) and forget manually reimplementing your POJOs in actionscript. (de)serialization on the server side is properly done behind the scene.
+
+Wrenched provides two ways of using externalization: when developers have control over their POJOs (and therefore they can "enhance" their classes) and when they don't (and they have to somehow work that fact around).
+
 externalization in Wrenched includes full support for Maps and Enums (probably similar to GraniteDS, as it still uses {{{org.granite.util.Enum}}} and {{{org.granite.collections.IMap}}} for convenience) and provides an AS3 implementation of a HashMap.
+
 Wrenched works (and ever will be) only via AMF protocol. no xml, sorry ;P.
 
-  * full lazy-loading support that (unlike [http://code.google.com/p/dphibernate dpHibernate] for example) doesn't depend on any persistence provider (and actually works even _without_ a database if so configured) and still allows strong typing.
+= Lazy loading =
 
-all that is done with minimal configuration and practically without dependencies. currently Wrenched requires only BlazeDS (being sort of an extension of it and hence using quite few of its classes, especially transport), leaving other frameworks (like Spring or Hibernate) to be of developers' choice.
+that's exactly it. full lazy-loading support that (unlike [http://code.google.com/p/dphibernate dpHibernate] for example) doesn't depend on any persistence provider (and actually works even _without_ a database if so configured) and still allows strong typing.
 
+= Configuration ease =
 
-
-
-
+all that is done with minimal configuration (which was one of the main points actually) and practically without dependencies. currently Wrenched requires only BlazeDS (being sort of an extension of it and hence using quite few of its classes, especially transport) and some APIs (which just have to be there due to the nature of stuff going on), leaving other frameworks (like Spring or Hibernate) to be of developers' choice.
 
 = Credits =
 
