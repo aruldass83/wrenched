@@ -1,0 +1,9 @@
+#summary known limitations
+
+it would have been perfect. however, nobody is perfect and even a product as wrenched has some limitations:
+
+  * as mentioned already, Wrenched only works with AMF.
+
+  * while it is supported to have attributes of type Map, it is not currently possible to exchange Maps per se. that is due to the fact that AMF messages are in fact maps as well and while deserializing AMF is peanuts, writing two maps in two different ways to the same AMF stream is yet unclear how to.
+
+  * no somewhat built-in annotation support on either side (Flex, Java). Wrenched tries to be as oblivious to the actual data model as possible, so it also tries to incorporate cases when there're no annotations present and there's no possibility to add them.
