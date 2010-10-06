@@ -1,4 +1,5 @@
 #summary what Wrenched really is
+#labels Featured
 
 = Introduction =
 
