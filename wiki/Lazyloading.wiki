@@ -13,7 +13,7 @@ as usual, a channel has to be configured in BlazeDS' `services-config.xml`, but 
 </channel-definition>
 }}}
 
-Wrenched provides a custom AMF channel, that instruments data as it passes through.
+unfortunately Flash hides all the serialization business, so, unlike Java side, it is impossible to customize it on levels of i/o streams (which would've been "symmetrical" and therefore - most appropriate). Wrenched only provides a custom AMF channel, that instruments already deserialized data as it passes through. 
 
 == providers ==
 
