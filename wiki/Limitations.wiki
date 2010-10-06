@@ -8,4 +8,4 @@ it would have been perfect. however, nobody is perfect and even a product as wre
 
   * due to the way instrumentation is implemented, it is not currently possible to use `ObjectUtil.copy` on proxies. i'm looking forward to implementing my own proxying engine that overcomes this issue for next release.
 
-  * no somewhat built-in annotation support on either side (Flex, Java). Wrenched tries to be as oblivious to the actual data model as possible, so it also tries to incorporate cases when there're no annotations present and there's no possibility to add them. but anyway, adding Flex annotations will be one of the goals for the next release.
+  * no somewhat built-in annotation support on either side (Flex, Java). Wrenched tries to be as oblivious to the actual data model as possible, so it also tries to incorporate cases when there're no annotations present and there's no possibility to add them. but anyway, adding Flex annotations (and maybe introspecting Java classes for `javax.persistence.*` annotations as well to automate registering) will be one of the goals for the next release.
