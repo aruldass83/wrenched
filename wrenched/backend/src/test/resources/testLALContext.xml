@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+	<bean id="lazyAttributeLoader" class="com.wrenched.core.services.LazyAttributeLoader">
+		<property name="providers">
+			<list>
+				<bean class="com.wrenched.core.services.TestProvider2" init-method="init">
+					<property name="delegate">
+						<bean class="com.wrenched.core.services.TestEntityLoader2"/>
+					</property>
+					<property name="methods">
+						<map>
+							<entry key="TestEntity#children" value="getTestChildren"/>
+						</map>
+					</property>
+				</bean>
+				<bean class="com.wrenched.core.services.TestProvider" init-method="init">
+					<property name="delegate">
+						<bean class="com.wrenched.core.services.TestEntityLoader"/>
+					</property>
+					<property name="loaderMethodName" value="load"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+</beans>
