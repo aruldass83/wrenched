@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.wrenched.core</groupId>
+	<artifactId>wrenched</artifactId>
+	<packaging>pom</packaging>
+	<version>1</version>
+	<name>Wrenched Core project bundle</name>
+	<properties>
+		<wrenched.version>1.0</wrenched.version>
+	</properties>
+	<modules>
+		<module>backend</module>
+		<module>frontend</module>
+		<!--
+		<module>examples</module>
+		-->
+	</modules>
+
+	<build>
+		<plugins>
+		<plugin>
+			<artifactId>maven-assembly-plugin</artifactId>
+			<configuration>
+				<descriptors>
+					<descriptor>assembly.xml</descriptor>
+				</descriptors>
+				<finalName>${project.artifactId}-${wrenched.version}</finalName>
+			</configuration>
+		</plugin>
+		</plugins>
+	</build>
+</project>
