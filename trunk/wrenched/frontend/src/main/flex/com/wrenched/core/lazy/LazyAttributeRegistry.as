@@ -1,17 +1,21 @@
 package com.wrenched.core.lazy {
 	import com.wrenched.core.domain.HashMap;
+	import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
+	import com.wrenched.core.remoting.DelegatingResponder;
 	import com.wrenched.core.util.ReflectionUtil;
-	
+
 	import flash.events.Event;
+	import flash.net.getClassByAlias;
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
-	
+
 	import mx.collections.ArrayCollection;
 	import mx.collections.ICollectionView;
 	import mx.rpc.AsyncToken;
 	import mx.rpc.IResponder;
+	import mx.rpc.events.ResultEvent;
 	import mx.rpc.remoting.RemoteObject;
-	
+
 	import org.flemit.reflection.Type;
 	import org.floxy.IProxyRepository;
 	import org.floxy.ProxyRepository;
@@ -43,6 +47,18 @@ package com.wrenched.core.lazy {
 
 		function LazyAttributeRegistry(loader:RemoteObject) {
 			lazyAttributeLoader = loader;
+
+			var token:AsyncToken = lazyAttributeLoader.getManagedClasses(); 
+			token.addResponder(new DelegatingResponder(this, 
+				function(event:ResultEvent):void { 
+					for each (var line:LazyAttributeRegistryDescriptor in event.result as ICollectionView) {
+						var local:String = flash.net.getClassByAlias(line.className);
+
+						for each (var attributeName:String in line.attributes) { 
+							registerClass(local, line.idName, attributeName);
+						}	 
+					} 
+				})); 
 		}
 
 		/**
@@ -53,23 +69,23 @@ package com.wrenched.core.lazy {
 		* registeres a class and an attribute to be subject for LAL by marking the class
 		* to be available for later proxying.
 		*/
-		public static function registerClass(clazz:Class, entityIdName:String, attributeName:String):void {
+		public static function registerClass(clazz:Class, entityIdName:Object, attributeName:String):void {
 			var className:String = ReflectionUtil.getCanonicalClassName(clazz);
-			
+
 			if (!ReflectionUtil.hasProperty(className, attributeName)) {
 				throw new ArgumentError(className + " doesn't have attribute " + attributeName); 
 			}
 
 			proxyRepository.prepare([ReflectionUtil.getClass(clazz)]).addEventListener(Event.COMPLETE,
-				function(evt:Event):void {
-					registerClassByName(className, entityIdName, attributeName);
-    			});
+			function(evt:Event):void {
+				registerClassByName(className, entityIdName, attributeName);
+			});
 		}
 
 		/**
 		* registeres a class and an attribute in this registry
 		*/
-		static function registerClassByName(className:String, entityIdName:String, attributeName:String):void {
+		static function registerClassByName(className:String, entityIdName:Object, attributeName:String):void {
 			if (!classes.hasOwnProperty(className)) {
 				classes[className] = {};
 				classes[className][ID_NAME] = entityIdName;
@@ -137,7 +153,7 @@ package com.wrenched.core.lazy {
 				var interceptor:LazyInterceptor = null; 
 
 				if (local) { 
-					var id:Object = obj[classes[local][ID_NAME]]; 
+					var id:Object = resolveId(local, obj); 
 					if (context.containsKey(id)) { 
 						//the proxy has already been created 
 						//for this very object, reuse 
@@ -159,9 +175,9 @@ package com.wrenched.core.lazy {
 				introspectionWatch[proxy] = true;
 
 				ReflectionUtil.copyProperties(obj, proxy, 
-					function(propertyName:String, propertyValue:Object):Object { 
-						return createProxy(propertyValue, context, introspectionWatch) 
-					}); 
+				function(propertyName:String, propertyValue:Object):Object { 
+					return createProxy(propertyValue, context, introspectionWatch) 
+				}); 
 
 				//to avoid stack overflows 
 				if (interceptor) { 
@@ -170,6 +186,33 @@ package com.wrenched.core.lazy {
 
 				return proxy; 
 			} 
+		}
+		
+		private static function resolveId(className:String, obj:Object):Object {
+			if (classes[className][ID_NAME] is String) {			
+				if (classes[className][ID_NAME] == "self") {
+					return obj;
+				}
+				else {
+					return obj[classes[className][ID_NAME]];				
+				}
+			}	
+			else if (classes[className][ID_NAME] is LazyAttributeRegistryDescriptor) {
+				var idDescriptor:LazyAttributeRegistryDescriptor =
+					classes[className][ID_NAME] as LazyAttributeRegistryDescriptor;
+				//composite id
+				var id:Object = new flash.net.getClassByAlias(idDescriptor.className)();
+				
+				for each (var idName:String in idDescriptor.attributes) {
+					id[idName] = obj[idName];
+				}
+				
+				return id;
+			}
+			else {
+				//don't accept anything else
+				return null;
+			}
 		}
 	}
 }		
