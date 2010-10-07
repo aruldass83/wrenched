@@ -55,7 +55,7 @@ package com.wrenched.core.lazy {
 						var local:String = flash.net.getClassByAlias(line.className);
 
 						for each (var attributeName:String in line.attributes) { 
-							registerClass(local, line.idName, attributeName);
+							registerClass(local, line.idName, attributeName, false);
 						}	 
 					} 
 				})); 
@@ -69,7 +69,7 @@ package com.wrenched.core.lazy {
 		* registeres a class and an attribute to be subject for LAL by marking the class
 		* to be available for later proxying.
 		*/
-		public static function registerClass(clazz:Class, entityIdName:Object, attributeName:String):void {
+		public static function registerClass(clazz:Class, entityIdName:Object, attributeName:String, force:Boolean=true):void {
 			var className:String = ReflectionUtil.getCanonicalClassName(clazz);
 
 			if (!ReflectionUtil.hasProperty(className, attributeName)) {
@@ -85,11 +85,14 @@ package com.wrenched.core.lazy {
 		/**
 		* registeres a class and an attribute in this registry
 		*/
-		static function registerClassByName(className:String, entityIdName:Object, attributeName:String):void {
+		static function registerClassByName(className:String, entityIdName:Object, attributeName:String, force:Boolean=true):void {
 			if (!classes.hasOwnProperty(className)) {
 				classes[className] = {};
 				classes[className][ID_NAME] = entityIdName;
 				classes[className][ATTRIBUTES] = [];
+			}
+			else if (force) {
+				classes[className][ID_NAME] = entityIdName;
 			}
 
 			(classes[className][ATTRIBUTES] as Array).push(attributeName);
