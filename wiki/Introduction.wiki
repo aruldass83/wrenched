@@ -15,7 +15,7 @@ Wrenched provides two ways of using externalization: when developers have contro
 
 externalization in Wrenched includes full support for Maps and Enums (probably similar to GraniteDS, as it still uses {{{org.granite.util.Enum}}} and {{{org.granite.collections.IMap}}} for convenience) and provides an AS3 implementation of a HashMap.
 
-Wrenched works (and ever will be) only via AMF protocol. no xml, sorry ;P.
+Wrenched works (and ever will be) only via AMF protocol and that _is_ a feature. no xml, sorry ;P.
 
 = Lazy loading =
 
