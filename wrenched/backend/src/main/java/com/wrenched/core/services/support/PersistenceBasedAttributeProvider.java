@@ -2,6 +2,12 @@ package com.wrenched.core.services.support;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
+
+import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
+
+import static com.wrenched.core.services.support.ClassIntrospectionUtil.toUpperCaseFirst;
+import static com.wrenched.core.services.support.ClassIntrospectionUtil.findClasses;
 
 /**
  * attribute provider implementation that is based on ORM. use it to
@@ -11,7 +17,7 @@ import java.lang.reflect.Method;
  * @author konkere
  *
  */
-public abstract class PersistenceBasedAttributeProvider extends AbstractAttributeProvider {
+public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider {
 	private String loaderMethodName;
 	private boolean fieldAccess = false;
 	
@@ -23,6 +29,14 @@ public abstract class PersistenceBasedAttributeProvider extends AbstractAttribut
 		if (this.delegate != null && this.loaderMethodName != null) {
 			this.delegate.getClass().getMethod(this.loaderMethodName, new Class[] {Class.class, Object.class});
 		}
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see com.wrenched.core.services.support.LazyAttributeProvider#getManagedClasses()
+	 */
+	public Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
+		return findClasses(this.getDomain(), this.fieldAccess);
 	}
 	
 	/**
@@ -129,10 +143,6 @@ public abstract class PersistenceBasedAttributeProvider extends AbstractAttribut
 			//that's a bug really, should never happen
 			throw new RuntimeException(e.getMessage(), e);
 		}
-	}
-
-	private static String toUpperCaseFirst(String s) {
-		return String.valueOf(s.charAt(0)).toUpperCase().concat(s.substring(1, s.length()));
 	}
 
 	/**
