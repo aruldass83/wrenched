@@ -23,7 +23,7 @@ that's exactly it. full lazy-loading support that (unlike [http://code.google.co
 
 = Configuration ease =
 
-all that is done with minimal configuration (which was one of the main points actually) and practically without dependencies. currently Wrenched requires only BlazeDS (being sort of an extension of it and hence using quite few of its classes, especially transport) and some APIs (which just have to be there due to the nature of stuff going on), leaving other frameworks (like Spring or Hibernate) to be of developers' choice.
+all that is done with minimal configuration (which was one of the main points actually) and practically without dependencies. currently Wrenched requires only BlazeDS (being sort of an extension of it and hence using quite few of its classes, especially transport) some `javax` APIs (which just have to be there due to the nature of stuff going on) and certain core classes of Spring, leaving other frameworks to be of developers' choice.
 
 = Credits =
 
