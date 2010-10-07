@@ -104,7 +104,7 @@ now that the server is configured to provide lazy loading, the client has to mak
 </mx:Application>
 }}}
 
-for the implementation to be as generic as possible, each class and lazy attribute have to be registered sppecifying so-called "id-name" of the class additionally. in case of persistence-based providers that has to be the name of `@Id` attribute, but for method-based providers on the other hand this can be any convenient attribute name, as long as it suffices the underlying DAO method.
+for the implementation to be as generic as possible, each class and lazy attribute have to be registered specifying so-called "id-name" of the class additionally. in case of persistence-based providers that has to be the name of `@Id` attribute, but for method-based providers on the other hand this can be any convenient attribute name (or `self` to use the instance itself), as long as it suffices the underlying DAO method.
 
 as of RC2 it is not mandatory to register classes on the client, as it will happen automatically according to configuration of lazy attribute providers on Java side. you can still however do it, if for some reason automatic configuration is not enough for you. however keep in mind that explicit configuration will always take precedence over the automatic one.
 
