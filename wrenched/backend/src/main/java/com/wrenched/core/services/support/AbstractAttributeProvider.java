@@ -1,8 +1,16 @@
 package com.wrenched.core.services.support;
 
+import com.wrenched.core.annotations.LazyAttributeDomain;
+
 public abstract class AbstractAttributeProvider implements LazyAttributeProvider {
 	protected Object delegate;
 	protected String domain;
+	
+	AbstractAttributeProvider() {
+		if (this.getClass().isAnnotationPresent(LazyAttributeDomain.class)) {
+			this.setDomain(getClass().getAnnotation(LazyAttributeDomain.class).value());
+		}
+	}
 	
 	protected abstract void init() throws Exception;
 	
