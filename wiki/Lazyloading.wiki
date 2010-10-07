@@ -63,7 +63,8 @@ LAL configuration for JPA could look like this for example:
 		</list>
 	</property>
 </bean>
-
+}}}
+{{{
 public class EntityLoader {
 //...
 	@LazyAttributeFetcher(targetClass=TestEntity2.class, attributeName="parent")
