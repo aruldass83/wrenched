@@ -119,7 +119,7 @@ public class Externalizer {
 		 * should be taken into account during externalization.
 		 * @return
 		 */
-		public boolean sortFields();
+		public boolean useGAS3();
 		
 		/**
 		 * should return a {@code Converter} for specified {@code clazz}
@@ -175,8 +175,8 @@ public class Externalizer {
 	
 	/**
 	 * get all declared and inherited fields of {@code target} 
-	 * and optionally sort them as GAS3 does with generated
-	 * actionscript classes
+	 * and optionally sort them alphabetically as GAS3 does with generated
+	 * actionscript classes. note that superclass fields go first. 
 	 * @param target
 	 * @return
 	 */
@@ -187,7 +187,7 @@ public class Externalizer {
 		do {
 			List<Field> currentProps = Arrays.asList(ss.getDeclaredFields());
 			
-			if (this.configuration.sortFields()) {
+			if (this.configuration.useGAS3()) {
 				Collections.sort(currentProps, PROPERTY_COMPARATOR);
 			}
 			
@@ -255,7 +255,7 @@ public class Externalizer {
 	public void readExternal(Object target, final ObjectInput in) throws IOException {
 		logger.debug("reading " + target.getClass().getCanonicalName());
 		
-		if (this.isEntity(target)) {
+		if (this.isEntity(target) && this.configuration.useGAS3()) {
 			this.readEntityHeader(in);
 		}
 		
