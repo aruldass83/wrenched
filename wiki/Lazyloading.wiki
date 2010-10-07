@@ -23,7 +23,7 @@ first, lazy attribute loader (or LAL :D) has to be configured and fed with provi
 
 currently two predefined providers exist:
 
-  * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`.
+  * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`. will scan provided domain for classes with `@javax.persistence.Entity` that have attributes with `fetch=FetchType.LAZY` and register them later.
 
 LAL configuration for JPA could look like this for example:
 
@@ -43,7 +43,7 @@ LAL configuration for JPA could look like this for example:
 </bean>
 }}}
 
-  * method-based provider, that will simply call a certain method on your DAO, assuming that this method accepts a single parameter - an id. the provider must be configured by associating a pair of entity and attribute names and method name, or by annotating corresponding methods with `@LazyAttributeFetcher` specifying class and attribute name this method fetches:
+  * method-based provider, that will simply call a certain method on your DAO, assuming that this method accepts a single parameter - an id. the provider must be configured by associating a pair of entity and attribute names and method name, or by annotating corresponding methods with `@LazyAttributeFetcher` specifying class and attribute name this method fetches. this information will be also used to register classes for lazy loading: through `methods` setter or by introspecting the loader object for annotations.
 
 {{{
 <bean id="lazyAttributeLoaderService" class="com.wrenched.core.services.LazyAttributeLoader">
@@ -81,7 +81,7 @@ public class EntityLoader {
 
 == usage ==
 
-now that the server is configured to provide lazy loading, the client has to make use of it. as of RC2 it is not mandatory to register classes on the client, as it will happen automatically according to configuration of lazy attribute providers on Java side. you can still however do it, if for some reason automatic configuration is not enough for you.
+now that the server is configured to provide lazy loading, the client has to make use of it. all the LAL logic on the Flex side is concentrated in `com.wrenched.core.lazy.LazyAttributeRegistry` class that needs to be instantiated with a remote object pointing to LAL service. as of RC2 it is not mandatory to register classes on the client, as it will happen automatically according to configuration of lazy attribute providers on Java side. you can still however do it, if for some reason automatic configuration is not enough for you.
 
 {{{
 <mx:Application creationComplete="onCreated();">
