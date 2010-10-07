@@ -1,10 +1,14 @@
 package com.wrenched.core.services;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//import com.wrenched.core.annotations.LazyAttributeDomain;
 import com.wrenched.core.domain.LazyAttribute;
+import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 import com.wrenched.core.services.support.LazyAttributeProvider;
 
 
@@ -43,6 +47,17 @@ public class LazyAttributeLoader {
 		}
 	}
 	
+	public Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
+		Collection<LazyAttributeRegistryDescriptor> classes =
+			new ArrayList<LazyAttributeRegistryDescriptor>();
+
+		for (LazyAttributeProvider provider : this.providers.values()) {
+			classes.addAll(provider.getManagedClasses());
+		}
+		
+		return classes;
+	}
+	
 	private LazyAttributeProvider findProvider(String entityName) {
 		String domain = entityName;
 
@@ -59,6 +74,15 @@ public class LazyAttributeLoader {
 	 */
 	public void setProviders(List<LazyAttributeProvider> providers) {
 		for (LazyAttributeProvider provider : providers) {
+//			String domain = null;
+//			
+//			if (provider.getClass().isAnnotationPresent(LazyAttributeDomain.class)) {
+//				domain = provider.getClass().getAnnotation(LazyAttributeDomain.class).value();
+//			}
+//			else {
+//				domain = provider.getDomain();
+//			}
+//			
 			this.providers.put(provider.getDomain(), provider);
 		}
 	}
