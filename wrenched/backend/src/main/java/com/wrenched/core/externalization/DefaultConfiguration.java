@@ -37,7 +37,7 @@ public class DefaultConfiguration implements Configuration {
 		return c;
 	}
 
-	public boolean sortFields() {
+	public boolean useGAS3() {
 		return true;
 	}
 
