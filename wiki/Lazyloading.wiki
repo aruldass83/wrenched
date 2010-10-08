@@ -108,4 +108,4 @@ for the implementation to be as generic as possible, each class and lazy attribu
 
 as of RC2 it is not mandatory to register classes on the client, as it will happen automatically according to configuration of lazy attribute providers on Java side. you can still however do it, if for some reason automatic configuration is not enough for you. however keep in mind that explicit configuration will always take precedence over the automatic one.
 
-after being registered, a lazy attribute will be fetched from the server when it's first asked for, otherwise it looks like a normal property, that can take part in bindings, etc.
+after being registered, a lazy attribute will be fetched from the server when it's first asked for, otherwise it looks like a normal property, that can take part in bindings, etc. when it obtains value, in addition to normal Flex'  property change event, the proxy will fire a `mx.events.PropertyChangeEvent` of type `propertyLoad` and kind `propertyLoad`. this is pure convenience, normally it is enough to listen to default property events.
