@@ -1,8 +1,8 @@
 package com.wrenched.core.services.support;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Map;
 
 import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 
@@ -18,18 +18,8 @@ import static com.wrenched.core.services.support.ClassIntrospectionUtil.findClas
  *
  */
 public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider {
-	private String loaderMethodName;
+	private static final String DEFAULT = "DEFAULT";
 	private boolean fieldAccess = false;
-	
-	/**
-	 * will check if configuration is correct
-	 * @throws Exception
-	 */
-	public void init() throws Exception {
-		if (this.delegate != null && this.loaderMethodName != null) {
-			this.delegate.getClass().getMethod(this.loaderMethodName, new Class[] {Class.class, Object.class});
-		}
-	}
 	
 	/*
 	 * (non-Javadoc)
@@ -37,26 +27,6 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	 */
 	public Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
 		return findClasses(this.getDomain(), this.fieldAccess);
-	}
-	
-	/**
-	 * will try to load a persistent entity
-	 * @param entityClass
-	 * @param entityId
-	 * @return
-	 * @throws IllegalAccessException
-	 */
-	private Object load(Class<?> entityClass, Object entityId) throws IllegalAccessException {
-		try {
-			Method loader = this.delegate.getClass().getMethod(this.loaderMethodName, new Class[] {Class.class, Object.class});
-			return loader.invoke(this.delegate, new Object[] {entityClass, entityId});
-		}
-		catch (NoSuchMethodException nsme) {
-			return null;
-		}
-		catch (InvocationTargetException ite) {
-			return null;
-		}
 	}
 	
 	/*
@@ -67,7 +37,7 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	public Object loadAttribute(Class<?> entityClass, Object entityId, String attributeName)
 	throws IllegalAccessException {
 		try {
-			Object entity = this.load(entityClass, entityId);
+			Object entity = this.access(DEFAULT, false, entityClass, entityId);
 			
 			if (entity == null) {
 				return null;
@@ -151,7 +121,14 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	 * @param loaderMethodName
 	 */
 	public void setLoaderMethodName(String loaderMethodName) {
-		this.loaderMethodName = loaderMethodName;
+		this.methods.put(DEFAULT, loaderMethodName);
+	}
+	
+	/**
+	 * not allowed for this provider
+	 */
+	public void setMethods(Map<String, String> methods) {
+		
 	}
 	
 	/**
