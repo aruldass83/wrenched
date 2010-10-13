@@ -19,7 +19,6 @@ import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
  */
 public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 	public static final String SEPARATOR = "#";
-	private final Map<String, String> methods = new HashMap<String, String>();
 	
 	/*
 	 * (non-Javadoc)
@@ -27,25 +26,14 @@ public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 	 */
 	public Object loadAttribute(Class<?> entityClass, Object entityId, String attributeName)
 	throws IllegalAccessException {
-		String methodName = methods.get(entityClass.getCanonicalName() + SEPARATOR + attributeName);
 		try {
-			Method method = this.delegate.getClass().getMethod(methodName, new Class[]{entityId.getClass()});
-			return method.invoke(this.delegate,	new Object[]{entityId});
+			return this.access(entityClass.getCanonicalName() + SEPARATOR + attributeName, true, entityId);
 		}
 		catch (NoSuchMethodException nsme) {
 			return new RuntimeException(nsme.getMessage(), nsme);
 		}
 		catch (InvocationTargetException ite) {
 			return new RuntimeException(ite.getMessage(), ite);
-		}
-	}
-	
-	public void init() throws Exception {
-		if (this.delegate != null && !this.methods.isEmpty()) {
-			for (Method m : this.delegate.getClass().getMethods()) {
-				assert this.methods.values().contains(m.getName());
-				assert (m.getParameterTypes().length == 1);
-			}
 		}
 	}
 	
