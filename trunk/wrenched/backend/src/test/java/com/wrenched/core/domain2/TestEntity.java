@@ -2,24 +2,44 @@ package com.wrenched.core.domain2;
 
 import java.util.List;
 
-public class TestEntity {
-	public Integer id;
-	private Object attribute1;
-	private Object attribute2;
-	private List<TestEntity2> children;
+import javax.persistence.Basic;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.OneToMany;
 
-	public Object getAttribute1() {
-		return attribute1;
+@Entity
+@IdClass(TestPK.class)
+public class TestEntity {
+	private String id1;
+	private String id2;
+	private Object attribute;
+	private List<TestEntity2> children;
+	
+	@Id
+	public String getId1() {
+		return id1;
 	}
-	public void setAttribute1(Object arrtibute1) {
-		this.attribute1 = arrtibute1;
+	public void setId1(String id1) {
+		this.id1 = id1;
 	}
-	public Object getAttribute2() {
-		return attribute2;
+	@Id
+	public String getId2() {
+		return id2;
 	}
-	public void setAttribute2(Object attribute2) {
-		this.attribute2 = attribute2;
+	public void setId2(String id2) {
+		this.id2 = id2;
 	}
+	@Basic(fetch=FetchType.LAZY)
+	public Object getAttribute() {
+		return attribute;
+	}
+	public void setAttribute(Object attribute) {
+		this.attribute = attribute;
+	}
+	
+	@OneToMany(fetch=FetchType.LAZY)
 	public List<TestEntity2> getChildren() {
 		return children;
 	}

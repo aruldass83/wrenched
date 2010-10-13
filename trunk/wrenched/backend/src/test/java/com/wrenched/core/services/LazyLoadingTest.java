@@ -6,7 +6,9 @@ import java.util.Set;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 
 import com.wrenched.core.domain.LazyAttribute;
+import com.wrenched.core.domain2.TestPK;
 import com.wrenched.core.services.LazyAttributeLoader;
+import com.wrenched.core.services.support.ClassIntrospectionUtil;
 
 
 public class LazyLoadingTest extends AbstractDependencyInjectionSpringContextTests {
@@ -14,6 +16,10 @@ public class LazyLoadingTest extends AbstractDependencyInjectionSpringContextTes
 	
 	public String[] getConfigLocations() {
 		return new String[] {"classpath:testLALContext.xml"}; 
+	}
+	
+	public void testDomainIntrospection() {
+		System.out.println(ClassIntrospectionUtil.findClasses("com.wrenched.core.domain2", false));
 	}
 	
 	public void testDirectLoading() throws IllegalAccessException {
@@ -29,11 +35,11 @@ public class LazyLoadingTest extends AbstractDependencyInjectionSpringContextTes
 	}
 
 	public void testMethodLoading() throws IllegalAccessException {
-		LazyAttribute attribute = loader.loadAttribute("com.wrenched.core.domain2.TestEntity", new Integer(3), "children");
+		LazyAttribute attribute = loader.loadAttribute("com.wrenched.core.domain2.TestEntity", new TestPK("0","1"), "children");
 		
 		assertTrue(attribute.getAttributeValue() instanceof List);
 
-		LazyAttribute attribute2 = loader.loadAttribute("com.wrenched.core.domain2.TestEntity2", new Integer(4), "parent");
+		LazyAttribute attribute2 = loader.loadAttribute("com.wrenched.core.domain2.TestEntity2", new TestPK("1","2"), "parent");
 		
 		assertTrue(attribute2.getAttributeValue() instanceof com.wrenched.core.domain2.TestEntity);
 	}
