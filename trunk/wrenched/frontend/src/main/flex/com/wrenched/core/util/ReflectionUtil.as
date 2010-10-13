@@ -19,7 +19,7 @@ package com.wrenched.core.util {
 			var destinationType:Type = Type.getType(destination);
 			
 	    	if (!sourceType.isAssignableFromInstance(destination)) {
-	    		throw new ArgumentError("incompatible objects: " + getCanonicalClassName(source) + ", " + getCanonicalClassName(destination));
+	    		throw new ArgumentError("incompatible objects: " + getQualifiedClassName(source) + ", " + getQualifiedClassName(destination));
 	    	}
 	    	
 			while(sourceType != Type.getType(Object)) {
@@ -39,8 +39,8 @@ package com.wrenched.core.util {
 			}
 		}
 	    
-		public static function hasProperty(className:String, attributeName:String):Boolean {
-			var type:Type = Type.getTypeByName(className);
+		public static function hasProperty(clazz:Class, attributeName:String):Boolean {
+			var type:Type = Type.getType(clazz);
 			
 			while ((type != Type.getType(Object))) {
 				var f:Boolean = type.getProperties(false).some(
@@ -57,18 +57,12 @@ package com.wrenched.core.util {
 			return false;
 		}
 
-		/**
-		 * returns the name of a class in "canonical" form
-		 */
-	    public static function getCanonicalClassName(obj:Object):String {
-    		return getQualifiedClassName(obj).replace("::", ".");
-	    }
 	
 		/**
 		 * returns class for an object
 		 */
 		public static function getClass(obj:Object):Class {
-			return getDefinitionByName(getCanonicalClassName(obj)) as Class;
+			return getDefinitionByName(getQualifiedClassName(obj)) as Class;
 		}
 	}
 }

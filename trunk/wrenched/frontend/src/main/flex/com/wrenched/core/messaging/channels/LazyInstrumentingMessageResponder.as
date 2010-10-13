@@ -100,7 +100,7 @@ package com.wrenched.core.messaging.channels
 	            {
 	            	if (LazyAttributeRegistry.initialized) {
 		            	//try to create proxies for all instances of known classes in the message body
-						msg.body = LazyAttributeRegistry.instance().createProxy(msg.body);
+						msg.body = LazyAttributeRegistry.createProxy(msg.body);
 	            	}
 	                agent.acknowledge(msg as AcknowledgeMessage, message);
 	            }

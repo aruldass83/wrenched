@@ -4,6 +4,7 @@ package com.wrenched.core.lazy {
 	
 	import flash.events.IEventDispatcher;
 	
+	import mx.collections.ICollectionView;
 	import mx.events.PropertyChangeEvent;
 	import mx.rpc.events.ResultEvent;
 	import mx.utils.ObjectUtil;
@@ -76,14 +77,12 @@ package com.wrenched.core.lazy {
 		 * creates a dynamic loader function for an attribute
 		 */
 		private function createLoader(attributeName:String):void {
-			this[getLoaderName(attributeName)] =
-				function(invocation:IInvocation):void {
-					this[getLoadingFlagName(attributeName)] = true;
-					LazyAttributeRegistry.instance().load(_class, _id, attributeName,
-						new DelegatingResponder(this,
-							function(event:ResultEvent):void {
-								process(invocation.invocationTarget, event.result as LazyAttribute);
-								invocation.proceed();
+    	    this[getLoaderName(attributeName)] =
+                function(target:Object):void {
+                    LazyAttributeRegistry.instance().load(_class, _id, attributeName,
+                        new DelegatingResponder(this,
+                            function(event:ResultEvent):void {
+								process(target, event.result as LazyAttribute);
 							}));
 				};
 			this[getLoadingFlagName(attributeName)] = false;
@@ -102,44 +101,55 @@ package com.wrenched.core.lazy {
 		 * and makes sure it is never fetched again for this
 		 * proxy
 		 */
-		private function process(target:Object, la:LazyAttribute):void {
-			trace("PROCESS", la.entityName, la.attributeName, la.attributeValue);
+        private function process(target:Object, la:LazyAttribute):void { 
+            trace("PROCESS", _class, la.attributeName, la.attributeValue); 
+            target[la.attributeName] = la.attributeValue;
 
-			if ((la.entityName == _class) &&
-					mx.utils.ObjectUtil.compare(la.entityId, _id) == 0) {
-				target[la.attributeName] = la.attributeValue;
-				/*
-				if (target is IEventDispatcher) {
-					var pce:PropertyChangeEvent =
-						PropertyChangeEvent.createUpdateEvent(target, la.attributeName, null, la.attributeValue);
-					IEventDispatcher(target).dispatchEvent(pce);
-				}
-				*/
-				this.deleteLoader(la.attributeName);
-			}
-		}
+            if (target is IEventDispatcher) { 
+                IEventDispatcher(target).dispatchEvent(createLoadedEvent(target, la)); 
+            }
+
+            this.deleteLoader(la.attributeName); 
+        } 
+        
+        private static function createLoadedEvent(source:Object, la:LazyAttribute):PropertyChangeEvent { 
+            var event:PropertyChangeEvent = new PropertyChangeEvent(LazyAttributeRegistry.PROPERTY_LOAD); 
+            event.kind = LazyAttributeRegistry.PROPERTY_LOAD; 
+            event.source = source; 
+            event.property = la.attributeName; 
+            event.oldValue = null; 
+            event.newValue = la.attributeValue; 
+            return event; 
+        }
 
 		private static function isGetter(invocation:IInvocation):Boolean {
 			return invocation.property &&
 				(invocation.property.getMethod.fullName == invocation.method.fullName);
 		}
-
-		public function intercept(invocation:IInvocation):void {
-//			trace("INTERCEPT", invocation.method.fullName);
-
-			if (_started && isGetter(invocation)) {
-				var attributeName:String = invocation.property.name;
-
-				if (this.isAttributeRegistered(attributeName) && !isLoading(attributeName)) {
-					this[getLoaderName(attributeName)](invocation);
-				}
-				else {
-					invocation.proceed();
-				}
-			}
-			else {
-				invocation.proceed();
-			}
+		
+		private static function isEmpty(value:Object):Boolean {
+			return !value || (value is ICollectionView && ICollectionView(value).length == 0);
 		}
+
+        public function intercept(invocation:IInvocation):void {
+//          trace("INTERCEPT", invocation.method.fullName);
+            if (_started && isGetter(invocation)) {
+                var attributeName:String = invocation.property.name;
+
+                if (this.isAttributeRegistered(attributeName) && !isLoading(attributeName)) {
+                    this[getLoadingFlagName(attributeName)] = true;
+                                   
+                    //if the attribute has data, perhaps it's better to keep it
+                    if (isEmpty(invocation.invocationTarget[attributeName])) {
+                        this[getLoaderName(attributeName)](invocation.invocationTarget);
+                    }
+                    else {
+                        this.deleteLoader(attributeName);
+                    }
+                }
+            }
+            
+            invocation.proceed();                  
+        }
 	}
 }
