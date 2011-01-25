@@ -25,7 +25,7 @@ well, the only thing that needs to be done here is subclassing `com.wrenched.cor
 
 == decorators ==
 
-quite often a situation arise when you must exchange objects of classes that come from somewhere else. a jar file from the development team across the corridor, etc. there's little you can do with these classes in this case. and here comes Wrenched again, with externalizable decorator support.
+quite often a situation arise when one must exchange objects of classes that come from somewhere else. a jar file from the development team across the corridor, etc. there's little you can do with these classes in this case. and here comes Wrenched again, with externalizable decorator support.
 
 the only thing you need to do here is to register corresponding classes:
 
@@ -42,6 +42,10 @@ the only thing you need to do here is to register corresponding classes:
 }}}
 
 so that when Wrenched does i/o it knows that objects of these classes are not externalizable and decorates them.
+
+== auto-decoration ==
+
+in addition to manually registering classes to be decorated, one can annotate his entity classes with `com.wrenched.core.annotations.Externalizable`. when instances of these classes are being exchanged, Wrenched checks class metadata and automatically creates runtime decorators if needed.
 
 == starting ==
 
