@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import java.util.IdentityHashMap;
 
+import com.wrenched.core.annotations.Externalizable;
 import com.wrenched.core.domain.EnumHolder;
 import com.wrenched.core.domain.ExternalizableDecorator;
 import com.wrenched.core.messaging.io.ExternalizableDecoratingPropertyProxy;
@@ -37,7 +38,8 @@ public class J5Amf3Output extends Amf3Output {
 		//k: just a way to distinguish the classes that have to be decorated for externalization
 		//   without creating a dedicated registry just for that. will see how it goes.
 		else if ((o != null) &&
-				(PropertyProxyRegistry.getRegistry().getProxy(o.getClass()) instanceof ExternalizableDecoratingPropertyProxy)) {
+				((PropertyProxyRegistry.getRegistry().getProxy(o.getClass()) instanceof ExternalizableDecoratingPropertyProxy) ||
+						o.getClass().isAnnotationPresent(Externalizable.class))) {
 			super.writeObject(ExternalizableDecorator.getInstance(o));
 		}
 		else {
