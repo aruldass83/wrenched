@@ -260,6 +260,28 @@ public class ExternalizationTest extends AbstractDependencyInjectionSpringContex
 		assertEquals(0, entity.getA6().size());
 	}
 	
+	public void testWritePlain2() {
+		TestPlainEntity2 entity = new TestPlainEntity2();
+		entity.setA1(666);
+		entity.setA2(true);
+		entity.setA4("blahblah");
+		entity.setA5(new String[] {"1","2","3"});
+		entity.setA6(new ArrayList<Integer>());
+		
+		this.writeAMF(entity, "target/testAMFExt.bin");
+	}
+
+	public void testReadPlain2() throws IllegalAccessException, ClassNotFoundException {
+		TestPlainEntity2 entity = this.readAMF(TestPlainEntity2.class, "target/testAMFExt.bin");
+
+		assertEquals(666, entity.getA1());
+		assertEquals(true, entity.isA2());
+		assertEquals(TestEnum.TRK, entity.getA3());
+		assertEquals("blahblah", entity.getA4());
+		assertEquals(3, entity.getA5().length);
+		assertEquals(0, entity.getA6().size());
+	}
+
 	public void testWriteMap() {
 		Map<Integer, Object> test = new HashMap<Integer, Object>();
 		
