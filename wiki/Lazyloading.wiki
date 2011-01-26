@@ -128,12 +128,11 @@ public class EntityLoader {
 @LazyAttributeProvider(LazyAttributeProviderType.PERSISTENCE)
 @LazyAttributeDomain("foo.bar.domain")
 public class EntityLoader2 extends HibernateDaoSupport {
-	private HibernateTemplate template;
 //...
 	@LazyAttributeFetcher
 	public Object loadMyStuff(Class<?> clazz, Object id) {
 		//why not like this?
-		return template.load(clazz, (Serializable)id);
+		return getHibernateTemplate().load(clazz, (Serializable)id);
 	}
 //...
 }}}
