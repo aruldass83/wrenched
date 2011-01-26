@@ -2,23 +2,21 @@ package com.wrenched.core.services;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.wrenched.core.annotations.LazyAttributeDomain;
 import com.wrenched.core.annotations.LazyAttributeFetcher;
 import com.wrenched.core.annotations.LazyAttributeProvider;
 import com.wrenched.core.annotations.LazyAttributeProviderType;
-import com.wrenched.core.domain2.TestEntity;
 import com.wrenched.core.domain2.TestEntity2;
 import com.wrenched.core.domain2.TestPK;
 
-@LazyAttributeProvider(LazyAttributeProviderType.METHOD)
-@LazyAttributeDomain("com.wrenched.core.domain2")
-public class TestEntityLoader {
+@LazyAttributeProvider(LazyAttributeProviderType.PERSISTENCE)
+@LazyAttributeDomain("com.wrenched")
+public class TestEntityLoader2 {
 	private Map<Object, Object> cache = new HashMap<Object, Object>();
 	
-	public TestEntityLoader() {
+	public TestEntityLoader2() {
 		com.wrenched.core.domain1.TestEntity te1 = new com.wrenched.core.domain1.TestEntity();
 		te1.id = 1;
 		te1.setAttribute1("blahblah");
@@ -60,17 +58,8 @@ public class TestEntityLoader {
 		cache.put(te13.getId(), te13);
 	}
 	
+	@LazyAttributeFetcher
 	public Object load(Class<?> clazz, Object id) {
 		return cache.get(id);
-	}
-	
-	@LazyAttributeFetcher(targetClass=TestEntity2.class, attributeName="parent")
-	public Object getTestParent(TestPK id) {
-		return ((TestEntity2)cache.get(id)).getParent();
-	}
-
-	@LazyAttributeFetcher(targetClass=TestEntity.class, attributeName="children")
-	public List<TestEntity2> getTestChildren(TestPK id) {
-		return ((com.wrenched.core.domain2.TestEntity)cache.get(id)).getChildren();
 	}
 }

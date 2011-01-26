@@ -6,9 +6,7 @@ public abstract class AbstractAttributeProvider extends MethodBasedAccessor impl
 	protected String domain;
 	
 	AbstractAttributeProvider() {
-		if (this.getClass().isAnnotationPresent(LazyAttributeDomain.class)) {
-			this.setDomain(getClass().getAnnotation(LazyAttributeDomain.class).value());
-		}
+		this.setDomainByClass(this.getClass());
 	}
 	
 	/*
@@ -26,5 +24,25 @@ public abstract class AbstractAttributeProvider extends MethodBasedAccessor impl
 	 */
 	public void setDomain(String domain) {
 		this.domain = domain;
+	}
+	
+	/**
+	 * helper method to set domain from corresponding annotation
+	 * @param clazz class to check
+	 */
+	protected void setDomainByClass(Class<?> clazz) {
+		if (clazz.isAnnotationPresent(LazyAttributeDomain.class)) {
+			this.setDomain(clazz.getAnnotation(LazyAttributeDomain.class).value());
+		}
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see com.wrenched.core.services.support.MethodBasedAccessor#setDelegate(java.lang.Object)
+	 */
+	@Override
+	public void setDelegate(Object delegate) {
+		super.setDelegate(delegate);
+		this.setDomainByClass(delegate.getClass());
 	}
 }
