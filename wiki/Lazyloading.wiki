@@ -19,11 +19,11 @@ unfortunately Flash hides all the serialization business, so, unlike Java side, 
 
 thanks to provider pattern implementation, lazy loading in Wrenched is oblivious to the way entities are managed. you can even serialize entities to files and still lazy loading mechanism will work as long as you tell Wrenched how to use you own way.
 
-first, lazy attribute loader (or LAL :D) has to be configured and fed with providers.  Lazy attribute providers are wrappers over user DAO classes. each provider manages a certain "domain" which is basically a package (or fully qualified class name). all the classes that are resolved to a domain will be managed by a single provider. this is convenient to have multiple providers for the same LAL. domain can be configured by setting the corresponding property on a provider, or by annotating provider class with `@LazyAttributeDomain`, specifying the domain as value.
+first, lazy attribute loader (or LAL :D) has to be configured and fed with providers.  Lazy attribute providers are wrappers over user DAO classes. each provider manages a certain "domain" which is basically a package (or fully qualified class name). all the classes that are resolved to a domain will be managed by a single provider. this is convenient to have multiple providers for the same LAL. domain can be configured by setting the corresponding property on a provider, or by annotating provider (or provider delegate) class with `@LazyAttributeDomain`, specifying the domain as value. keep in mind that setting the domain explicitly through corresponding setter on the provider will have precedence over any annotation-based configuration.
 
 currently two predefined providers exist:
 
-  * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`. will scan provided domain for classes with `@javax.persistence.Entity` that have attributes with `fetch=FetchType.LAZY` and register them later.
+  * persistence-based provider, which is built around the fact that ORM frameworks have a dedicated "loader" method that takes two parameters: entity class and entity id. in Hibernate it is `Session.load(Class, Object)`, in JPA it is `EntityManager.find(Class, Object)`. will scan provided domain for classes with `@javax.persistence.Entity` that have attributes with `fetch=FetchType.LAZY` and register them later. this type of provider usually doesn't require any additional code, only configuration.
 
 LAL configuration for JPA could look like this for example:
 
@@ -53,11 +53,13 @@ LAL configuration for JPA could look like this for example:
 				<property name="delegate">
 					<bean class="foo.bar.dao.EntityLoader"/>
 				</property>
+				<!-- set methods like this -->
 				<property name="methods">
 					<map>
 						<entry key="TestEntity#children" value="getTestChildren"/>
 					</map>
 				</property>
+				<!-- set the domain either like this -->
 				<property name="domain" value="foo.bar.other.domain"/>
 			</bean>
 		</list>
@@ -65,8 +67,11 @@ LAL configuration for JPA could look like this for example:
 </bean>
 }}}
 {{{
+// or set the domain like that
+@LazyAttributeDomain("foo.bar.other.domain")
 public class EntityLoader {
 //...
+	//or set methods like that
 	@LazyAttributeFetcher(targetClass=TestEntity2.class, attributeName="parent")
 	public TestEntity getTestParent(Integer id) {
 		//...
@@ -75,6 +80,19 @@ public class EntityLoader {
 	public List<TestEntity2> getTestChildren(Integer id) {
 		//...
 	}
+//...
+}
+}}}
+{{{
+public class TestEntity {
+//...
+	private List<TestEntity2> children;
+//...
+}
+
+public class TestEntity2 {
+//...
+	private TestEntity parent;
 //...
 }
 }}}
