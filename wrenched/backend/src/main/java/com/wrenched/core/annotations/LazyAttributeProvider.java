@@ -1,15 +1,13 @@
 package com.wrenched.core.annotations;
 
-import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Target({METHOD})
+@Target({TYPE})
 @Retention(RUNTIME)
-public @interface LazyAttributeFetcher {
-	Class<?> targetClass() default Void.class;
-
-	String attributeName() default "";
+public @interface LazyAttributeProvider {
+	LazyAttributeProviderType value();
 }

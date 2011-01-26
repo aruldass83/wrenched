@@ -1,9 +1,11 @@
 package com.wrenched.core.services.support;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 
+import com.wrenched.core.annotations.LazyAttributeFetcher;
 import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.toUpperCaseFirst;
@@ -137,5 +139,22 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	 */
 	public void setFieldAccess(boolean flag) {
 		this.fieldAccess = flag;
+	}
+	
+	@Override
+	public void setDelegate(Object delegate) {
+		super.setDelegate(delegate);
+		
+		for (Method m : this.delegate.getClass().getDeclaredMethods()) {
+			if (m.isAnnotationPresent(LazyAttributeFetcher.class)) {
+				if ((m.getParameterTypes().length == 2) &&
+						(m.getParameterTypes()[0]).equals(Class.class) &&
+						(m.getParameterTypes()[1]).equals(Object.class)) {
+					this.setLoaderMethodName(m.getName());
+					break;
+				}
+			}
+		}
+
 	}
 }
