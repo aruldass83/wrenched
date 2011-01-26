@@ -97,6 +97,51 @@ public class TestEntity2 {
 }
 }}}
 
+== annotation support ==
+
+to be in line with the annotation trend :P Wrenched provides full annotation support for configuring lazy-loading (hence hiding all internal business of setting up all the properties and populating internal dependencies). have a look at the example below:
+
+{{{
+<beans>
+	<bean id="loader1" class="EntityLoader"/>
+	<bean id="loader2" class="EntityLoader2"/>
+
+	<bean id="lazyAttributeLoader" class="com.wrenched.core.services.LazyAttributeLoader"/>
+
+	<!-- that is mandatory, similar to spring-jpa's PersistenceAnnotationBeanPostProcessor -->
+	<bean class="com.wrenched.core.annotations.LazyAttributeProviderAnnotationPostProcessor"/>
+</beans>
+}}}
+{{{
+@LazyAttributeProvider(LazyAttributeProviderType.METHOD)
+@LazyAttributeDomain("foo.bar.other.domain")
+public class EntityLoader {
+//...
+	@LazyAttributeFetcher(targetClass=TestEntity2.class, attributeName="parent")
+	public Object getTestParent(TestPK id) {
+		//...
+	}
+
+	@LazyAttributeFetcher(targetClass=TestEntity.class, attributeName="children")
+	public List<TestEntity2> getTestChildren(TestPK id) {
+		//...
+	}
+//...
+}
+
+@LazyAttributeProvider(LazyAttributeProviderType.PERSISTENCE)
+@LazyAttributeDomain("foo.bar.domain")
+public class EntityLoader2 {
+//...
+	@LazyAttributeFetcher
+	public Object loadMyStuff(Class<?> clazz, Object id) {
+		//...
+	}
+//...
+}}}
+
+here two DAO classes are annotated with `com.wrenched.core.annotations.LazyAttributeProvider` specifying type of provider: persistence- or method-based. all the other annotation configuration is quite the same as discussed before. keep in mind that instantiating `com.wrenched.core.annotations.LazyAttributeProviderAnnotationPostProcessor` in spring bean context is mandatory.
+
 == usage ==
 
 now that the server is configured to provide lazy loading, the client has to make use of it. all the LAL logic on the Flex side is concentrated in `com.wrenched.core.lazy.LazyAttributeRegistry` class that needs to be instantiated with a remote object pointing to LAL service.
