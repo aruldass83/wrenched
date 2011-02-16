@@ -7,7 +7,7 @@
 	<version>1</version>
 	<name>Wrenched Core project bundle</name>
 	<properties>
-		<wrenched.version>1.0.RC2</wrenched.version>
+		<wrenched.version>1.0.RC5</wrenched.version>
 		<spring.version>2.5.6.SEC01</spring.version>
 		<blazeds.version>3.2.0.3978</blazeds.version>
 		<flex.version>3.2.0.3958</flex.version>
@@ -16,21 +16,21 @@
 		<module>backend</module>
 		<module>frontend</module>
 		<!--
-		<module>examples</module>
+		<module>example</module>
 		-->
 	</modules>
 
 	<build>
 		<plugins>
-		<plugin>
-			<artifactId>maven-assembly-plugin</artifactId>
-			<configuration>
-				<descriptors>
-					<descriptor>assembly.xml</descriptor>
-				</descriptors>
-				<finalName>${project.artifactId}-${wrenched.version}</finalName>
-			</configuration>
-		</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
+					<finalName>${project.artifactId}-${wrenched.version}</finalName>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>
