@@ -82,12 +82,14 @@ public class EntityLoader {
 {{{
 public class TestEntity {
 //...
+	private Integer id;
 	private List<TestEntity2> children;
 //...
 }
 
 public class TestEntity2 {
 //...
+	private Integer id;
 	private TestEntity parent;
 //...
 }
@@ -113,13 +115,13 @@ to be in line with the annotation trend :P Wrenched provides full annotation sup
 @LazyAttributeDomain("foo.bar.other.domain")
 public class EntityLoader {
 //...
-	@LazyAttributeFetcher(targetClass=TestEntity2.class, attributeName="parent")
-	public Object getTestParent(TestPK id) {
+	@LazyAttributeFetcher(targetClass=TestEntity2.class, idName="id", attributeName="parent")
+	public Object getTestParent(Integer id) {
 		//...
 	}
 
-	@LazyAttributeFetcher(targetClass=TestEntity.class, attributeName="children")
-	public List<TestEntity2> getTestChildren(TestPK id) {
+	@LazyAttributeFetcher(targetClass=TestEntity.class, idName="id", attributeName="children")
+	public List<TestEntity2> getTestChildren(Integer id) {
 		//...
 	}
 //...
@@ -137,7 +139,11 @@ public class EntityLoader2 extends HibernateDaoSupport {
 //...
 }}}
 
-here two DAO classes are annotated with `@com.wrenched.core.annotations.LazyAttributeProvider` specifying type of provider: method- or persistence-based. method configuration is achieved by annotating corresponding ones with `@com.wrenched.core.annotations.LazyAttributeFetcher` specifying class and attribute name this method fetches. notice that in case of persistence-based provider it is assumed that only one suitable method exists and annotation attributes are ignored. the domain is configured with `@com.wrenched.core.annotations.LazyAttributeDomain`, specifying the domain as value.
+here two DAO classes are annotated with `@com.wrenched.core.annotations.LazyAttributeProvider` specifying type of provider: method- or persistence-based. method configuration is achieved by annotating corresponding ones with `@com.wrenched.core.annotations.LazyAttributeFetcher` specifying class and attribute name this method fetches.
+
+notice that an `idName`, identity attribute name of specified class, must be also provided (as there's no general way to uniquely address instances outside ORM apart from object references, which don't match across different virtual machines). if for some reason this is not applicable, `idName` can be omitted and will result in the whole instance being passed as fetcher method argument (this is not recommended resulting in substantial network traffic).
+
+notice that in case of persistence-based provider it is assumed that only one suitable method exists and annotation attributes are ignored. the domain is configured with `@com.wrenched.core.annotations.LazyAttributeDomain`, specifying the domain as value.
 
 keep in mind that instantiating `com.wrenched.core.annotations.LazyAttributeProviderAnnotationPostProcessor` in spring bean context is mandatory when using `@com.wrenched.core.annotations.LazyAttributeProvider`, otherwise there's no limitation on using annotation support whatsoever. both types of configuration (explicit and annotation) can be even mixed together. setting properties explicitly through corresponding setters on providers will however have precedence over any annotation-based configuration.
 
