@@ -20,6 +20,8 @@ import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 	public static final String SEPARATOR = "#";
 	
+	private final Map<String, String> managedDefinitions = new HashMap<String, String>();
+	
 	/*
 	 * (non-Javadoc)
 	 * @see com.wrenched.core.services.support.LazyAttributeProvider#loadAttribute(java.lang.Class, java.lang.Object, java.lang.String)
@@ -53,28 +55,40 @@ public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 			}
 			
 			classes.get(z[0]).className = z[0];
-			//TODO: somewhow get hold on id-name here?
-			classes.get(z[0]).idName = "self";
+			classes.get(z[0]).idName = this.managedDefinitions.get(z[0]);
 			
 			if (classes.get(z[0]).attributes == null) {
 				classes.get(z[0]).attributes = new ArrayList<String>();
 			}
 			
-			classes.get(z[0]).attributes.add(z[1]);
+			classes.get(z[0]).attributes.add(z[2]);
 		}
 
 		return classes.values();
 	}
 
 	/**
-	 * a map of loader methods per domain className#attributeName that
+	 * a map of loader methods per domain className#idName#attributeName that
 	 * take a single parameter of type Object.
 	 * class names will be prefixed using {@code LazyAttributeProvider#getDomain()}.
 	 * @param ms
 	 */
 	public void setMethods(Map<String, String> ms) {
 		for (String name : ms.keySet()) {
-			this.methods.put(this.getDomain() + "." + name, ms.get(name));
+			String qualifiedName = this.getDomain() + "." + name;
+			String[] z = qualifiedName.split(SEPARATOR);
+			
+			if (z.length == 2) {
+				this.managedDefinitions.put(z[0], LazyAttributeFetcher.SELF);
+				this.methods.put(qualifiedName, ms.get(name));
+			}
+			else if (z.length == 3) {
+				this.managedDefinitions.put(z[0], z[1]);
+				this.methods.put(z[0] + SEPARATOR + z[2], ms.get(name));
+			}
+			else {
+				throw new RuntimeException("fetcher [" + ms.get(name) + "] is not properly configured!");
+			}
 		}
 	}
 	
@@ -90,7 +104,9 @@ public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 				String className = m.getAnnotation(LazyAttributeFetcher.class).targetClass().getCanonicalName();
 				
 				if (className.startsWith(this.getDomain())) {
-					methods.put(className + SEPARATOR + m.getAnnotation(LazyAttributeFetcher.class).attributeName(),
+					this.managedDefinitions.put(className, m.getAnnotation(LazyAttributeFetcher.class).idName());
+					this.methods.put(className +
+							SEPARATOR + m.getAnnotation(LazyAttributeFetcher.class).attributeName(),
 							m.getName());
 				}
 			}

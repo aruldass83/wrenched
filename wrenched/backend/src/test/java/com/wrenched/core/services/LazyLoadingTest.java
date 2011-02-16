@@ -1,7 +1,6 @@
 package com.wrenched.core.services;
 
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
 
@@ -9,7 +8,6 @@ import com.wrenched.core.domain.LazyAttribute;
 import com.wrenched.core.domain2.TestPK;
 import com.wrenched.core.services.LazyAttributeLoader;
 import com.wrenched.core.services.support.ClassIntrospectionUtil;
-
 
 public class LazyLoadingTest extends AbstractDependencyInjectionSpringContextTests {
 	private LazyAttributeLoader loader;
@@ -27,14 +25,19 @@ public class LazyLoadingTest extends AbstractDependencyInjectionSpringContextTes
 		LazyAttribute attribute12 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(1), "attribute2");
 		LazyAttribute attribute21 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "attribute1");
 		LazyAttribute attribute22 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "attribute2");
+		LazyAttribute attribute = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(3), "children");
+		LazyAttribute attribute2 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "parent");
 		
+		assertTrue(attribute.getAttributeValue() instanceof List);
+		assertTrue(attribute2.getAttributeValue() instanceof com.wrenched.core.domain1.TestEntity);
+
 		assertEquals("blahblah", attribute11.getAttributeValue());
 		assertEquals(666d, attribute12.getAttributeValue());
 		assertTrue(attribute21.getAttributeValue() instanceof byte[]);
-		assertEquals("test", attribute22.getAttributeValue());
+		assertEquals("test1", attribute22.getAttributeValue());
 	}
 
-	public void testMethodLoading() throws IllegalAccessException {
+	public void testPersistenceLoading() throws IllegalAccessException {
 		LazyAttribute attribute = loader.loadAttribute("com.wrenched.core.domain2.TestEntity", new TestPK("0","1"), "children");
 		
 		assertTrue(attribute.getAttributeValue() instanceof List);

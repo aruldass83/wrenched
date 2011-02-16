@@ -8,6 +8,7 @@ import com.wrenched.core.annotations.LazyAttributeDomain;
 import com.wrenched.core.annotations.LazyAttributeFetcher;
 import com.wrenched.core.annotations.LazyAttributeProvider;
 import com.wrenched.core.annotations.LazyAttributeProviderType;
+import com.wrenched.core.domain2.TestEntity;
 import com.wrenched.core.domain2.TestEntity2;
 import com.wrenched.core.domain2.TestPK;
 
@@ -17,17 +18,17 @@ public class TestEntityLoader2 {
 	private Map<Object, Object> cache = new HashMap<Object, Object>();
 	
 	public TestEntityLoader2() {
-		com.wrenched.core.domain1.TestEntity te1 = new com.wrenched.core.domain1.TestEntity();
-		te1.id = 1;
-		te1.setAttribute1("blahblah");
-		te1.setAttribute2(new Double(666));
-		
-		com.wrenched.core.domain1.TestEntity te2 = new com.wrenched.core.domain1.TestEntity();
-		te2.id = 2;
-		te2.setAttribute1(new byte[] {});
-		te2.setAttribute2("test");
-
-		com.wrenched.core.domain2.TestEntity te3 = new com.wrenched.core.domain2.TestEntity();
+//		com.wrenched.core.domain1.TestEntity te1 = new com.wrenched.core.domain1.TestEntity();
+//		te1.id = 1;
+//		te1.setAttribute1("blahblah");
+//		te1.setAttribute2(new Double(666));
+//		
+//		com.wrenched.core.domain1.TestEntity te2 = new com.wrenched.core.domain1.TestEntity();
+//		te2.id = 2;
+//		te2.setAttribute1(new byte[] {});
+//		te2.setAttribute2("test");
+//
+		TestEntity te3 = new TestEntity();
 		te3.setId1("0");
 		te3.setId2("1");
 		te3.setAttribute(new Double(666));
@@ -50,8 +51,8 @@ public class TestEntityLoader2 {
 		
 		te3.setChildren(Arrays.asList(new TestEntity2[]{te11, te12, te13}));
 		
-		cache.put(te1.id, te1);
-		cache.put(te2.id, te2);
+//		cache.put(te1.id, te1);
+//		cache.put(te2.id, te2);
 		cache.put(new TestPK(te3.getId1(), te3.getId2()), te3);
 		cache.put(te11.getId(), te11);
 		cache.put(te12.getId(), te12);
