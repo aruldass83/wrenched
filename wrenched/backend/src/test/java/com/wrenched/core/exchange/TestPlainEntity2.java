@@ -1,6 +1,7 @@
 package com.wrenched.core.exchange;
 
 import java.util.List;
+import java.util.Map;
 
 import com.wrenched.core.annotations.Externalizable;
 import com.wrenched.core.domain.AbstractExternalizableEntity;
@@ -17,6 +18,7 @@ public class TestPlainEntity2 {
 	protected Object a4;
 	public String[] a5;
 	public List<Integer> a6;
+	public Map<Integer, Object> a7;
 	
 	public int getA1() {
 		return a1;
@@ -50,5 +52,11 @@ public class TestPlainEntity2 {
 	}
 	public void setA6(List<Integer> a6) {
 		this.a6 = a6;
+	}
+	public Map<Integer, Object> getA7() {
+		return a7;
+	}
+	public void setA7(Map<Integer, Object> a7) {
+		this.a7 = a7;
 	}
 }

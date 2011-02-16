@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -189,6 +190,33 @@ public class ExternalizationTest extends AbstractDependencyInjectionSpringContex
 		return entity;
 	}
 	
+	public void testWritePrimitives() {
+		TestPlainEntity3 entity = new TestPlainEntity3();
+		entity.setA1(true);
+		entity.setA2(Byte.MAX_VALUE);
+		entity.setA3(Short.parseShort("15"));
+		entity.setA4(666);
+		entity.setA5(666l);
+		entity.setA6(10e-5f);
+		entity.setA7(2e6d);
+		entity.setA8("blahblah".getBytes());
+		
+		this.writeAMF(entity, "target/testExtPrimitive.bin");
+	}
+	
+	public void testReadPrimitives() throws IllegalAccessException, ClassNotFoundException {
+		TestPlainEntity3 entity = this.readAMF(TestPlainEntity3.class, "target/testExtPrimitive.bin");
+		
+		assertEquals(true, entity.isA1());
+		assertEquals(Byte.MAX_VALUE, entity.getA2());
+		assertEquals(Short.parseShort("15"), entity.getA3());
+		assertEquals(666, entity.getA4());
+		assertEquals(666l, entity.getA5());
+		assertEquals(10e-5f, entity.getA6());
+		assertEquals(2e6d, entity.getA7());
+		assertTrue(Arrays.equals("blahblah".getBytes(), entity.getA8()));
+	}
+	
 	public void testWrite() {
 		TestEntity entity = new TestEntity();
 		entity.setA1(666);
@@ -261,12 +289,20 @@ public class ExternalizationTest extends AbstractDependencyInjectionSpringContex
 	}
 	
 	public void testWritePlain2() {
+		Map<Integer, Object> test = new HashMap<Integer, Object>();
+		
+		test.put(1, "blahblah");
+		test.put(2, new Object());
+//		test.put(3, new ArrayList());
+		test.put(3, new TestPlainEntity3());
+
 		TestPlainEntity2 entity = new TestPlainEntity2();
 		entity.setA1(666);
 		entity.setA2(true);
 		entity.setA4("blahblah");
 		entity.setA5(new String[] {"1","2","3"});
 		entity.setA6(new ArrayList<Integer>());
+		entity.setA7(test);
 		
 		this.writeAMF(entity, "target/testAMFExt.bin");
 	}
@@ -280,6 +316,15 @@ public class ExternalizationTest extends AbstractDependencyInjectionSpringContex
 		assertEquals("blahblah", entity.getA4());
 		assertEquals(3, entity.getA5().length);
 		assertEquals(0, entity.getA6().size());
+
+		Map<Integer, Object> test = entity.getA7();
+		
+		assertNotNull(test);
+		assertEquals(3, test.size());
+		assertEquals("blahblah", test.get(1));
+		assertNotNull(test.get(2));
+//		assertEquals(0, ((List)test.get(3)).size());
+		assertTrue(test.get(3) instanceof TestPlainEntity3);
 	}
 
 	public void testWriteMap() {
