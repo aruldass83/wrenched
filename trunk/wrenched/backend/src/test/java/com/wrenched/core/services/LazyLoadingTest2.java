@@ -27,11 +27,16 @@ public class LazyLoadingTest2 extends AbstractDependencyInjectionSpringContextTe
 		LazyAttribute attribute12 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(1), "attribute2");
 		LazyAttribute attribute21 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "attribute1");
 		LazyAttribute attribute22 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "attribute2");
+		LazyAttribute attribute = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(3), "children");
+		LazyAttribute attribute2 = loader.loadAttribute("com.wrenched.core.domain1.TestEntity", new Integer(2), "parent");
+		
+		assertTrue(attribute.getAttributeValue() instanceof List);
+		assertTrue(attribute2.getAttributeValue() instanceof com.wrenched.core.domain1.TestEntity);
 		
 		assertEquals("blahblah", attribute11.getAttributeValue());
 		assertEquals(666d, attribute12.getAttributeValue());
 		assertTrue(attribute21.getAttributeValue() instanceof byte[]);
-		assertEquals("test", attribute22.getAttributeValue());
+		assertEquals("test1", attribute22.getAttributeValue());
 	}
 
 	public void testMethodLoading() throws IllegalAccessException {

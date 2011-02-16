@@ -4,6 +4,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
 	<bean id="loader" class="com.wrenched.core.services.TestEntityLoader"/>
+	<bean id="loader2" class="com.wrenched.core.services.TestEntityLoader2"/>
 
 	<bean id="lazyAttributeLoader" class="com.wrenched.core.services.LazyAttributeLoader">
 		<property name="providers">
@@ -12,12 +13,12 @@
 					<property name="delegate" ref="loader"/>
 					<property name="methods">
 						<map>
-							<entry key="TestEntity#children" value="getTestChildren"/>
+							<entry key="TestEntity#id#children" value="getTestChildren"/>
 						</map>
 					</property>
 				</bean>
 				<bean class="com.wrenched.core.services.support.PersistenceBasedAttributeProvider" init-method="init">
-					<property name="delegate" ref="loader"/>
+					<property name="delegate" ref="loader2"/>
 					<property name="domain" value="com.wrenched"/>
 					<property name="loaderMethodName" value="load"/>
 				</bean>
