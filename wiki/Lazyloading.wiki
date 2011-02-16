@@ -55,7 +55,7 @@ LAL configuration for JPA could look like this for example:
 				</property>
 				<property name="methods">
 					<map>
-						<entry key="TestEntity#children" value="getTestChildren"/>
+						<entry key="TestEntity#id#children" value="getTestChildren"/>
 					</map>
 				</property>
 				<property name="domain" value="foo.bar.other.domain"/>
@@ -64,8 +64,10 @@ LAL configuration for JPA could look like this for example:
 	</property>
 </bean>
 }}}
+
+notice mentioning of `id` in method declaration above. it is identity attribute name of specified class and it must be also provided (as there's no general way to uniquely address instances outside ORM apart from object references, which don't match across different virtual machines). if for some reason this is not applicable, it can be omitted and will result in the whole instance being passed as fetcher method argument (this is not recommended resulting in substantial network traffic).
+
 {{{
-// or set the domain like that
 public class EntityLoader {
 //...
 	//or set methods like that
@@ -140,8 +142,6 @@ public class EntityLoader2 extends HibernateDaoSupport {
 }}}
 
 here two DAO classes are annotated with `@com.wrenched.core.annotations.LazyAttributeProvider` specifying type of provider: method- or persistence-based. method configuration is achieved by annotating corresponding ones with `@com.wrenched.core.annotations.LazyAttributeFetcher` specifying class and attribute name this method fetches.
-
-notice that an `idName`, identity attribute name of specified class, must be also provided (as there's no general way to uniquely address instances outside ORM apart from object references, which don't match across different virtual machines). if for some reason this is not applicable, `idName` can be omitted and will result in the whole instance being passed as fetcher method argument (this is not recommended resulting in substantial network traffic).
 
 notice that in case of persistence-based provider it is assumed that only one suitable method exists and annotation attributes are ignored. the domain is configured with `@com.wrenched.core.annotations.LazyAttributeDomain`, specifying the domain as value.
 
