@@ -22,7 +22,7 @@ import com.wrenched.core.messaging.io.ExternalizableDecoratingPropertyProxy;
 import flex.messaging.io.PropertyProxyRegistry;
 
 /**
- * Externalization support for GAS3-generated actionscript classes
+ * Externalization support for AMF
  * @author konkere
  *
  */
@@ -109,7 +109,6 @@ public class Externalizer {
 				@Override
 				public Object convert(Object source,
 						Class<? extends Object> returnType) {
-					// TODO Auto-generated method stub
 					return source;
 				}
 		};
@@ -293,7 +292,7 @@ public class Externalizer {
 	public void writeExternal(Object target, final ObjectOutput out) throws IOException {
 		logger.debug("writing " + target.getClass().getCanonicalName());
 		
-		if (this.isEntity(target)) {
+		if (this.isEntity(target) && this.configuration.useGAS3()) {
 			this.writeEntityHeader(out);
 		}
 		
@@ -347,7 +346,9 @@ public class Externalizer {
 	}
 
 	/**
-	 * reads a primitive {@code f} on {@code in} and sets in on {@code target}
+	 * reads a primitive {@code f} on {@code in} and sets in on {@code target}.<br><br>
+	 * notice that actionscript only has two numeric types: {@code Number} for floating point and {@code int} for integers
+	 * and doesn't differentiate between precisions, deserializing them as Double and Integer correspondingly.
 	 * @param target
 	 * @param f
 	 * @param in
@@ -357,40 +358,63 @@ public class Externalizer {
 	 */
 	protected void readPrimitive(Object target, Field f, ObjectInput in) throws IllegalArgumentException, IllegalAccessException, IOException {
 		Class<?> c = f.getType();
+		Object value = null;
+		
+		try {
+			value = in.readObject();
+		}
+		catch (ClassNotFoundException e) {
+			//not possible ;)
+			return;
+		}
 		
 		if (c.isAssignableFrom(Boolean.TYPE)) {
-			f.setBoolean(target, in.readBoolean());
+			f.setBoolean(target, ((Boolean)value).booleanValue()/*in.readBoolean()*/);
 		}
 		else if (c.isAssignableFrom(Byte.TYPE)) {
-			f.setByte(target, in.readByte());
+			if (value instanceof Number) {
+				f.setByte(target, ((Number)value).byteValue()/*in.readByte()*/);
+			}
 		}
 		else if (c.isAssignableFrom(Short.TYPE)) {
-			f.setShort(target, in.readShort());
+			if (value instanceof Number) {
+				f.setShort(target, ((Number)value).shortValue()/*in.readShort()*/);
+			}
 		}
 		else if (c.isAssignableFrom(Integer.TYPE)) {
-			f.setInt(target, in.readInt());
+			if (value instanceof Number) {
+				f.setInt(target, ((Number)value).intValue()/*in.readInt()*/);
+			}
 		}
 		else if (c.isAssignableFrom(Long.TYPE)) {
-			f.setLong(target, in.readLong());
+			if (value instanceof Number) {
+				f.setLong(target, ((Number)value).longValue()/*in.readLong()*/);
+			}
 		}
 		else if (c.isAssignableFrom(Float.TYPE)) {
-			float tmp = in.readFloat();
-			if (Float.compare(Float.NaN, tmp) != 0 ){
-				f.setFloat(target, in.readFloat());
+			if (value instanceof Number) {
+				float tmp = ((Number)value).floatValue();
+//				float tmp = in.readFloat();
+				if (Float.compare(Float.NaN, tmp) != 0) {
+					f.setFloat(target, tmp);
+				}
 			}
 		}
 		else if (c.isAssignableFrom(Double.TYPE)) {
-			double tmp = in.readDouble();
-			if (Double.compare(Double.NaN, tmp) != 0 ){
-				f.setDouble(target, in.readDouble());
+			if (value instanceof Number) {
+				double tmp = ((Number)value).doubleValue();
+//				double tmp = in.readDouble();
+				if (Double.compare(Double.NaN, tmp) != 0) {
+					f.setDouble(target, tmp);
+				}
 			}
 		}
-		
-		return;
 	}
 	
 	/**
-	 * writes a {@code f} of {@code target} to {@code out}
+	 * writes a {@code f} of {@code target} to {@code out}.<br><br>
+	 * notice that AMF can't handle primitives (neither from java, nor from actionscript),
+	 * so they have to be written as their "big" wrappers.
 	 * @param target
 	 * @param f
 	 * @param out
@@ -400,40 +424,50 @@ public class Externalizer {
 	 */
 	protected void writePrimitive(Object target, Field f, ObjectOutput out) throws IllegalArgumentException, IllegalAccessException, IOException {
 		Class<?> c = f.getType();
+		Object value = null;
 		
 		if (c.isAssignableFrom(Boolean.TYPE)) {
-			out.writeBoolean(f.getBoolean(target));
+			value = Boolean.valueOf(f.getBoolean(target));
+//			out.writeBoolean(f.getBoolean(target));
 		}
 		else if (c.isAssignableFrom(Byte.TYPE)) {
-			out.writeByte(f.getByte(target));
+			value = Byte.valueOf(f.getByte(target));
+//			out.writeByte(f.getByte(target));
 		}
 		else if (c.isAssignableFrom(Short.TYPE)) {
-			out.writeShort(f.getShort(target));
+			value = Short.valueOf(f.getShort(target));
+//			out.writeShort(f.getShort(target));
 		}
 		else if (c.isAssignableFrom(Integer.TYPE)) {
-			out.writeInt(f.getInt(target));
+			value = Integer.valueOf(f.getInt(target));
+//			out.writeInt(f.getInt(target));
 		}
 		else if (c.isAssignableFrom(Long.TYPE)) {
-			out.writeLong(f.getLong(target));
+			value = Long.valueOf(f.getLong(target));
+//			out.writeLong(f.getLong(target));
 		}
 		else if (c.isAssignableFrom(Float.TYPE)) {
 			float tmp = f.getFloat(target);
-			if (Float.compare(Float.NaN, tmp) != 0 ){
-				out.writeFloat(f.getFloat(tmp));
-			}else{
-				out.writeObject(null);
-			}
+			value = Float.compare(Float.NaN, tmp) != 0 ? tmp : null;
+//			if (Float.compare(Float.NaN, tmp) != 0 ){
+//				out.writeFloat(tmp);
+//			}
+//			else{
+//				out.writeObject(null);
+//			}
+			
 		}
 		else if (c.isAssignableFrom(Double.TYPE)) {
 			double tmp = f.getDouble(target);
-			if (Double.compare(Double.NaN, tmp) != 0 ){
-				out.writeDouble(tmp);
-			}else{
-				out.writeObject(null);
-			}
+			value = Double.compare(Double.NaN, tmp) != 0 ? tmp : null;
+//			if (Double.compare(Double.NaN, tmp) != 0 ){
+//				out.writeDouble(tmp);
+//			}else{
+//				out.writeObject(null);
+//			}
 		}
 		
-		return;
+		out.writeObject(value);
 	}
 	
 	private static void report(Object o, Field f, Throwable t) {
