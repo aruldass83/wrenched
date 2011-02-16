@@ -8,6 +8,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.core.Ordered;
@@ -74,6 +75,13 @@ public class LazyAttributeProviderAnnotationPostProcessor implements Instantiati
 			}
 			
 			lap.setDelegate(bean);
+
+			try {
+				lap.init();
+			}
+			catch (Exception e) {
+				throw new BeanInitializationException("can't initialize provider", e);
+			}
 			
 			for (LazyAttributeLoader lal : loaders.values()) {
 				lal.setProviders(Arrays.asList(new LazyAttributeProvider[]{lap}));
