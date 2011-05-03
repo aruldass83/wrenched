@@ -3,6 +3,7 @@ package com.wrenched.core.services.support;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +57,14 @@ public class MethodBasedAccessor {
 	 */
 	public void init() throws Exception {
 		if (this.delegate != null && !this.methods.isEmpty()) {
-			for (Method m : this.delegate.getClass().getMethods()) {
-				assert this.methods.values().contains(m.getName());
+			Collection<String> names = ClassIntrospectionUtil.getMethodNames(this.delegate.getClass());
+			
+			for (String methodName : this.methods.values()) {
+				assert names.contains(methodName);
 			}
+//			for (Method m : this.delegate.getClass().getMethods()) {
+//				assert this.methods.values().contains(m.getName());
+//			}
 		}
 	}
 	

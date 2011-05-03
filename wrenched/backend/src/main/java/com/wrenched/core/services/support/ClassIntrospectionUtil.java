@@ -45,6 +45,14 @@ public class ClassIntrospectionUtil {
 			return result;
 		}
 	}
+	
+	public static Collection<String> getMethodNames(Class clazz) {
+		Collection<String> names = new ArrayList<String>();
+		for (Method m : clazz.getMethods()) {
+			names.add(m.getName());
+		}
+		return names;
+	}
 
 	public static Collection<LazyAttributeRegistryDescriptor> findClasses(String domain, boolean fieldAccess) {
 		Collection<LazyAttributeRegistryDescriptor> classes =
