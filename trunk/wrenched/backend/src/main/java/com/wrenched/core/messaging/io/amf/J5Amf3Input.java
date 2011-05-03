@@ -43,14 +43,16 @@ public class J5Amf3Input extends Amf3Input {
     protected TraitsInfo readTraits(int ref) throws IOException {
     	TraitsInfo ti = super.readTraits(ref);
     	
-        Class<?> desiredClass = AbstractProxy.getClassFromClassName(ti.getClassName(),
-        		context.createASObjectForMissingType);
-
-    	if (desiredClass.isAnnotationPresent(Externalizable.class)) {
-    		Externalizer.registerDecoratorFor(desiredClass);
-    		//k: just to be sure
-    		ti = new TraitsInfo(ti.getClassName(), ti.isDynamic(), true, ti.getProperties());
-    		traitsTable.add(ti);
+    	if (ti.getClassName() != null && ti.getClassName().length() > 0) {
+	        Class<?> desiredClass = AbstractProxy.getClassFromClassName(ti.getClassName(),
+	        		context.createASObjectForMissingType);
+	
+	    	if (desiredClass.isAnnotationPresent(Externalizable.class)) {
+	    		Externalizer.registerDecoratorFor(desiredClass);
+	    		//k: just to be sure
+	    		ti = new TraitsInfo(ti.getClassName(), ti.isDynamic(), true, ti.getProperties());
+	    		traitsTable.add(ti);
+	    	}
     	}
     	
     	return ti;

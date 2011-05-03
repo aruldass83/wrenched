@@ -61,7 +61,7 @@ public class MethodBasedAttributeProvider extends AbstractAttributeProvider {
 				classes.get(z[0]).attributes = new ArrayList<String>();
 			}
 			
-			classes.get(z[0]).attributes.add(z[2]);
+			classes.get(z[0]).attributes.add(z[1]);
 		}
 
 		return classes.values();
