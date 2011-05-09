@@ -223,7 +223,8 @@ package com.wrenched.core.lazy {
 				var idDescriptor:LazyAttributeRegistryDescriptor =
 					classes[className][ID_NAME] as LazyAttributeRegistryDescriptor;
 				//composite id
-				var id:Object = new flash.net.getClassByAlias(idDescriptor.className)();
+				var idClass:Class = flash.net.getClassByAlias(idDescriptor.className) as Class;
+				var id:Object = new idClass();
 
 				for each (var idName:String in idDescriptor.attributes) {
 					id[idName] = obj[idName];
