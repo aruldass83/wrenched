@@ -1,4 +1,5 @@
 #summary configuring externalization
+#labels Phase-Design,Phase-Implementation
 
 here and after i will be using Spring to demonstrate configuration snippets.
 
