@@ -23,7 +23,7 @@ in order to handle proxies properly a custom `JavaAdapter` must be configured as
 	class="com.wrenched.core.messaging.services.remoting.adapters.InstrumentingJavaAdapter" default="true"/>
 }}}
 
-`InstrumentingJavaAdapter` instruments values and handles proxies as provided by corresponding adapter (see *Setup*).
+`InstrumentingJavaAdapter` instruments values and handles proxies as provided by corresponding adapter (see [Setup]).
 
 == providers ==
 
