@@ -1,4 +1,4 @@
-package com.wrenched.core.messaging.services.remoting.adapters;
+package com.wrenched.core.externalization;
 
 import java.io.BufferedReader;
 import java.io.IOException;
