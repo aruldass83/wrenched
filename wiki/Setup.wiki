@@ -1,5 +1,5 @@
 #summary how to set your project up
-#labels Phase-Deploy
+#labels Phase-Deploy,Phase-Requirements
 
 == dependency management ==
 
