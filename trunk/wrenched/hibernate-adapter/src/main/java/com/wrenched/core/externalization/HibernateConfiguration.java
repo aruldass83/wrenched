@@ -9,34 +9,23 @@ import com.wrenched.core.instrumentation.ProxyInstrumentor;
 import com.wrenched.core.instrumentation.adapters.HibernateProxyAdapter;
 
 public class HibernateConfiguration extends DefaultConfiguration {
+	private static final Converter<Object, Object> INSTRUMENTING_CONVERTER = 
+		new Converter<Object, Object>() {
+			private final ProxyInstrumentor instrumentor = 
+				new HibernateProxyAdapter();
+	
+			public Object convert(Object source, Class<?> returnType) {
+				try {
+					return instrumentor.unwrap(source);
+				}
+				catch (NoSuchFieldException nsfe) {
+					return null;
+				}
+			}
+		};
+
 	static {
-		converters.put(HibernateProxy.class,
-				new Converter<HibernateProxy, Object>() {
-					private final ProxyInstrumentor instrumentor = 
-						new HibernateProxyAdapter();
-
-					public Object convert(HibernateProxy source, Class<?> returnType) {
-						try {
-							return instrumentor.unwrap(source);
-						}
-						catch (NoSuchFieldException nsfe) {
-							return null;
-						}
-					}
-				});
-		converters.put(PersistentCollection.class,
-				new Converter<PersistentCollection, Object>() {
-					private final ProxyInstrumentor instrumentor = 
-						new HibernateProxyAdapter();
-
-					public Object convert(PersistentCollection source, Class<?> returnType) {
-						try {
-							return instrumentor.unwrap(source);
-						}
-						catch (NoSuchFieldException nsfe) {
-							return null;
-						}
-					}
-				});
+		converters.put(HibernateProxy.class, INSTRUMENTING_CONVERTER);
+		converters.put(PersistentCollection.class, INSTRUMENTING_CONVERTER);
 	}
 }
