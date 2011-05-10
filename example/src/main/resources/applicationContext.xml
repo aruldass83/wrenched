@@ -9,12 +9,7 @@
 		<constructor-arg value="-tcp,-tcpAllowOthers,true,-tcpPort,8043" />
 	</bean>
 
-	<bean class="com.wrenched.core.externalization.Externalizer" factory-method="getInstance">
-		<constructor-arg>
-			<bean class="com.wrenched.core.externalization.HibernateConfiguration"/>
-		</constructor-arg>
-	</bean>
-	<bean class="com.wrenched.core.services.MetadataLoader" factory-method="getInstance"/>
+	<bean class="com.wrenched.core.externalization.Externalizer" factory-method="getInstance"/>
 	<bean name="lazyAttributeLoader" class="com.wrenched.core.services.LazyAttributeLoader" />
 
 	<!-- that is mandatory, similar to spring-jpa's PersistenceAnnotationBeanPostProcessor -->
