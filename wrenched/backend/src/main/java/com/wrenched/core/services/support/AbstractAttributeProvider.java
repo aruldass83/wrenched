@@ -1,6 +1,10 @@
 package com.wrenched.core.services.support;
 
+import java.util.Collection;
+
 import com.wrenched.core.annotations.LazyAttributeDomain;
+import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
+import com.wrenched.core.services.MetadataLoader;
 
 public abstract class AbstractAttributeProvider extends MethodBasedAccessor implements LazyAttributeProvider {
 	protected String domain;
@@ -34,6 +38,14 @@ public abstract class AbstractAttributeProvider extends MethodBasedAccessor impl
 		if (clazz.isAnnotationPresent(LazyAttributeDomain.class)) {
 			this.setDomain(clazz.getAnnotation(LazyAttributeDomain.class).value());
 		}
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see com.wrenched.core.services.support.LazyAttributeProvider#getManagedClasses()
+	 */
+	public final Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
+		return MetadataLoader.getInstance().getManagedClasses(this.getDomain());
 	}
 	
 	/*
