@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://wrenched.com/example/tree"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+	xmlns:tns="http://wrenched.com/example/tree">
+
+	<xsd:element name="root" type="tns:NodeType"/>
+
+	<xsd:complexType name="NodeType">
+		<xsd:sequence>
+			<xsd:element name="children" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="node" maxOccurs="unbounded" type="tns:NodeType"/>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="parent" minOccurs="0" nillable="true" type="tns:NodeType"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:normalizedString" use="required" />
+		<xsd:attribute name="description" type="xsd:normalizedString" use="optional" />
+	</xsd:complexType>
+</xsd:schema>
