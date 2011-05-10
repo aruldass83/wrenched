@@ -26,11 +26,16 @@ public class InstrumentingJavaAdapter extends JavaAdapter {
 	@Override
 	public Object invoke(Message message) {
 		Object result = super.invoke(message);
-		
-		try {
-			return instrumentor.unwrap(result);
+
+		if (instrumentor != null) {
+			try {
+				return instrumentor.unwrap(result);
+			}
+			catch (NoSuchFieldException nsfe) {
+				return result;
+			}
 		}
-		catch (NoSuchFieldException nsfe) {
+		else {
 			return result;
 		}
 	}

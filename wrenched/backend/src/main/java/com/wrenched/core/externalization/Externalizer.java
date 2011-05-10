@@ -40,7 +40,8 @@ public class Externalizer {
 	private final Configuration configuration;
 	
 	public static Externalizer getInstance() {
-		return getInstance(new DefaultConfiguration());
+		Configuration config = (Configuration)FactoryFinder.find(Configuration.class.getCanonicalName());
+		return getInstance(config == null ? new DefaultConfiguration() : config);
 	}
 	
 	public static Externalizer getInstance(Configuration config) {
