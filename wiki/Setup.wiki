@@ -13,4 +13,4 @@ apart from these come _adapters_: `hibernate-adapter`, `simple-adapter`, etc. th
 
 == frameworks ==
 
-as mentioned in Introduction Wrenched is based on *Spring Framework* _2.5.6_ (not mandatory, though strongly recommended) and is built towards *Flex SDK* _3.2.0_ and *Flash Player* _9_. thus backward compatibility is not an issue.
+as mentioned in [Introduction] Wrenched is based on *Spring Framework* _2.5.6_ (not mandatory, though strongly recommended) and is built towards *Flex SDK* _3.2.0_ and *Flash Player* _9_. thus backward compatibility is not an issue.
