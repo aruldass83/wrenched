@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
+	<bean id="h2Server" class="org.h2.tools.Server" factory-method="createTcpServer" init-method="start" destroy-method="stop">
+		<constructor-arg value="-tcp,-tcpAllowOthers,true,-tcpPort,8043" />
+	</bean>
+
+	<bean class="com.wrenched.core.externalization.Externalizer" factory-method="getInstance">
+		<constructor-arg>
+			<bean class="com.wrenched.core.externalization.HibernateConfiguration"/>
+		</constructor-arg>
+	</bean>
+	<bean class="com.wrenched.core.services.MetadataLoader" factory-method="getInstance"/>
+	<bean name="lazyAttributeLoader" class="com.wrenched.core.services.LazyAttributeLoader" />
+
+	<!-- that is mandatory, similar to spring-jpa's PersistenceAnnotationBeanPostProcessor -->
+	<bean class="com.wrenched.core.annotations.LazyAttributeProviderAnnotationPostProcessor" />
+<!--
+	<bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceUnitName" value="example-app"/>
+		<property name="persistenceXmlLocation" value="classpath:persistence.xml"/>
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.OpenJpaVendorAdapter"/>
+		</property>
+		<property name="jpaDialect">
+			<bean class="org.springframework.orm.jpa.vendor.OpenJpaDialect"/>
+		</property>
+		<property name="loadTimeWeaver">
+			<bean class="org.springframework.instrument.classloading.weblogic.WebLogicLoadTimeWeaver" />
+		</property>
+	</bean>
+
+	<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
+-->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean" depends-on="h2Server">
+		<property name="annotatedClasses">
+			<list>
+				<value>com.wrenched.example.domain.TestEntity</value>
+				<value>com.wrenched.example.domain.TestEntity2</value>
+				<value>com.wrenched.example.domain.TestPK</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<bean class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+				<property name="location" value="classpath:hibernate.properties"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean name="treeLoader" class="com.wrenched.example.services.TreeLoader">
+		<constructor-arg index="0" value="classpath:exampleTree.xml"/>
+	</bean>
+	
+	<bean name="hibernateLoader" class="com.wrenched.example.services.HibernateLoader">
+		<property name="sessionFactory" ref="sessionFactory"/>
+	</bean>
+</beans>

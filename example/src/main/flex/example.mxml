@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreated();">
+	<mx:Script>
+		<![CDATA[
+			import com.wrenched.core.lazy.LazyAttributeRegistry;
+			import com.wrenched.core.remoting.DelegatingResponder;
+			import com.wrenched.example.domain.TestEntity;
+			import com.wrenched.example.domain.TestEntity2;
+			import com.wrenched.example.domain.TestPK;
+			import com.wrenched.example.domain.TreeNode;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.List;
+			import mx.events.ListEvent;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			public var rootNode:TreeNode;
+			[Bindable]
+			public var list:ArrayCollection = new ArrayCollection();
+			
+			public function reset():void {
+				var token:AsyncToken = exampleService.getNode(1);
+				token.addResponder(new DelegatingResponder(null,
+					function(event:ResultEvent):void {
+						rootNode = event.result as TreeNode;
+						tree1.validateNow();
+					}));				
+			}
+			
+			public function load():void {
+				var pk:TestPK = new TestPK();
+				pk.id1 = "0";
+				pk.id2 = "1";
+
+				var token:AsyncToken = dataService.getTestEntity(pk);
+				token.addResponder(new DelegatingResponder(null,
+					function(event:ResultEvent):void {
+						Alert.show(event.result.toString(), "xuy");
+						list.addItem(event.result);
+					}));
+			}
+
+			private function onSelect(event:ListEvent):void {
+				var item:TreeNode = List(event.currentTarget).selectedItem as TreeNode;
+				tree1.expandItem(item, !tree1.isItemOpen(item), true, true);
+			}
+			
+			private function onCreated():void {
+				LazyAttributeRegistry.instance(this.lazyAttributeLoader);
+			}
+		]]>
+	</mx:Script>
+	<mx:RemoteObject id="lazyAttributeLoader" destination="lazyAttributeLoader" showBusyCursor="true"/>
+	<mx:RemoteObject id="exampleService" destination="treeLoader" showBusyCursor="true"/>
+	<mx:RemoteObject id="dataService" destination="hibernateLoader" showBusyCursor="true"/>
+	<mx:HBox width="100%" height="100%">
+		<mx:VBox width="50%" height="100%" horizontalAlign="center">
+			<mx:Label text="Lazy Tree"/>
+			<mx:Tree id="tree1" width="100%" height="100%" dataProvider="{rootNode}" labelField="id"
+				itemClick="onSelect(event);"/><!-- itemOpening="onExpand(event);"-->
+			<mx:Button label="Load" click="reset();"/>
+		</mx:VBox>
+		<mx:VBox width="50%" height="100%" horizontalAlign="center">
+			<mx:Label text="Lazy Datagrid"/>
+			<mx:DataGrid id="dg1" width="100%" dataProvider="{list}" selectedIndex="-1">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Column 1" dataField="id1"/>
+					<mx:DataGridColumn headerText="Column 2" dataField="id2"/>
+					<mx:DataGridColumn headerText="Column 3" dataField="attribute"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:DataGrid id="dg2" width="100%" dataProvider="{dg1.selectedItem.children}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Column 1" dataField="id"/>
+					<mx:DataGridColumn headerText="Column 2" dataField="attribute1"/>
+					<mx:DataGridColumn headerText="Column 3" dataField="attribute2"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Button label="Load" click="load();"/>
+		</mx:VBox>
+	</mx:HBox>
+</mx:Application>
