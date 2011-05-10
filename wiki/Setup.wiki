@@ -1,7 +1,7 @@
 #summary how to set your project up
 #labels Phase-Deploy
 
-== introduction ==
+== dependency management ==
 
 Wrenched is naturally managed by Maven and comes in several projects.
 
