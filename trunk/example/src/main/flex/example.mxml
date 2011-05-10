@@ -10,7 +10,6 @@
 			import com.wrenched.example.domain.TreeNode;
 			
 			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
 			import mx.controls.List;
 			import mx.events.ListEvent;
 			import mx.rpc.AsyncToken;
@@ -38,7 +37,6 @@
 				var token:AsyncToken = dataService.getTestEntity(pk);
 				token.addResponder(new DelegatingResponder(null,
 					function(event:ResultEvent):void {
-						Alert.show(event.result.toString(), "xuy");
 						list.addItem(event.result);
 					}));
 			}
