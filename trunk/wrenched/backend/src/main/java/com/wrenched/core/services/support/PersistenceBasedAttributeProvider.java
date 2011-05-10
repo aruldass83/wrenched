@@ -2,14 +2,11 @@ package com.wrenched.core.services.support;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Map;
 
 import com.wrenched.core.annotations.LazyAttributeFetcher;
-import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
+import com.wrenched.core.services.MetadataLoader;
 
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.toUpperCaseFirst;
-import static com.wrenched.core.services.support.ClassIntrospectionUtil.findClasses;
 
 /**
  * attribute provider implementation that is based on ORM. use it to
@@ -25,10 +22,11 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	
 	/*
 	 * (non-Javadoc)
-	 * @see com.wrenched.core.services.support.LazyAttributeProvider#getManagedClasses()
+	 * @see com.wrenched.core.services.support.MethodBasedAccessor#init()
 	 */
-	public Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
-		return findClasses(this.getDomain(), this.fieldAccess);
+	public void init() throws Exception {
+		super.init();
+		MetadataLoader.getInstance().loadClasses(this.getDomain(), this.fieldAccess);
 	}
 	
 	/*
@@ -123,14 +121,7 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	 * @param loaderMethodName
 	 */
 	public void setLoaderMethodName(String loaderMethodName) {
-		this.methods.put(DEFAULT, loaderMethodName);
-	}
-	
-	/**
-	 * not allowed for this provider
-	 */
-	public void setMethods(Map<String, String> methods) {
-		
+		this.addMethod(DEFAULT, loaderMethodName);
 	}
 	
 	/**
@@ -140,7 +131,7 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 	public void setFieldAccess(boolean flag) {
 		this.fieldAccess = flag;
 	}
-	
+	/*	
 	@Override
 	public void setDelegate(Object delegate) {
 		super.setDelegate(delegate);
@@ -155,6 +146,26 @@ public class PersistenceBasedAttributeProvider extends AbstractAttributeProvider
 				}
 			}
 		}
+	}
+*/
 
+	/*
+	 * (non-Javadoc)
+	 * @see com.wrenched.core.services.support.MethodBasedAccessor#isDeclarationSuitable(com.wrenched.core.annotations.LazyAttributeFetcher, java.lang.reflect.Method)
+	 */
+	@Override
+	protected boolean isDeclarationSuitable(LazyAttributeFetcher metadata, Method m) {
+		return (m.getParameterTypes().length == 2) &&
+				(m.getParameterTypes()[0]).equals(Class.class) &&
+				(m.getParameterTypes()[1]).equals(Object.class);
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see com.wrenched.core.services.support.MethodBasedAccessor#getKey(com.wrenched.core.annotations.LazyAttributeFetcher, java.lang.reflect.Method)
+	 */
+	@Override
+	protected String getKey(LazyAttributeFetcher metadata, Method m) {
+		return DEFAULT;
 	}
 }

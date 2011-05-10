@@ -8,15 +8,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.wrenched.core.annotations.LazyAttributeFetcher;
+
 /**
  * convenience class that allows mapping delegate methods to
  * string keys and then invoke it.
  * @author konkere
  *
  */
-public class MethodBasedAccessor {
+public abstract class MethodBasedAccessor {
 	protected Object delegate;
-	protected final Map<String, String> methods = new HashMap<String, String>();
+	private final Map<String, String> methods = new HashMap<String, String>();
 	
 	private Class[] getArgTypes(Object[] args, boolean useExplicitTypes) {
 		List<Class> classes = new ArrayList<Class>();
@@ -51,27 +53,30 @@ public class MethodBasedAccessor {
 	}
 	
 	/**
-	 * checks that at least the delegate has methods with specified names (doesn't check
-	 * on the argument classes, as it is known only during runtime.
+	 * read method metadata if applicable and check that at least the delegate has methods with specified declaration
+	 * (doesn't check on the argument classes, as it is known only during runtime).
 	 * @throws Exception
 	 */
 	public void init() throws Exception {
-		if (this.delegate != null && !this.methods.isEmpty()) {
-			Collection<String> names = ClassIntrospectionUtil.getMethodNames(this.delegate.getClass());
-			
-			for (String methodName : this.methods.values()) {
-				assert names.contains(methodName);
+		if (this.delegate != null) {
+			for (Method m : this.delegate.getClass().getDeclaredMethods()) {
+				if (m.isAnnotationPresent(LazyAttributeFetcher.class)) {
+					if (this.isDeclarationSuitable(m.getAnnotation(LazyAttributeFetcher.class), m)) {
+						this.methods.put(this.getKey(m.getAnnotation(LazyAttributeFetcher.class), m), m.getName());
+					}
+				}
 			}
-//			for (Method m : this.delegate.getClass().getMethods()) {
-//				assert this.methods.values().contains(m.getName());
-//			}
+			
+			if (!this.methods.isEmpty()) {
+				Collection<String> names = ClassIntrospectionUtil.getMethodNames(this.delegate.getClass());
+				
+				for (String methodName : this.methods.values()) {
+					assert names.contains(methodName);
+				}
+			}
 		}
 	}
 	
-	/**
-	 * 
-	 * @param delegate
-	 */
 	public void setDelegate(Object delegate) {
 		this.delegate = delegate;
 	}
@@ -80,11 +85,23 @@ public class MethodBasedAccessor {
 		return this.methods;
 	}
 	
-	/**
-	 * a map of loader methods per key
-	 * @param ms
-	 */
-	public void setMethods(Map<String, String> ms) {
-		this.methods.putAll(ms);
+	protected void addMethod(String key, String name) {
+		this.methods.put(key, name);
 	}
+	
+	/**
+	 * subclasses must provide convenient keys for fetcher methods
+	 * @param metadata
+	 * @param m
+	 * @return
+	 */
+	protected abstract String getKey(LazyAttributeFetcher metadata, Method m);
+	
+	/**
+	 * subclasses must determine if a fetcher method is suitable for them to use
+	 * @param metadata
+	 * @param m
+	 * @return
+	 */
+	protected abstract boolean isDeclarationSuitable(LazyAttributeFetcher metadata, Method m);
 }
