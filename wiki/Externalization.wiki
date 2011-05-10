@@ -55,6 +55,6 @@ final thing that you have to do (yes, for the very purpose of not wanting to do 
 <bean class="com.wrenched.core.externalization.Externalizer" factory-method="getInstance"/>
 }}}
 
-`Externalizer` is configured by specifying an instance of `com.wrenched.core.externalization.Externalizer$Configuration` or a subclass of `com.wrenched.core.externalization.DefaultConfiguration` (this way will be familiar to jBPM users).
+`Externalizer` is configured by specifying an instance of `com.wrenched.core.externalization.Externalizer$Configuration` or a subclass of `com.wrenched.core.externalization.AbstractConfiguration` (this way will be familiar to jBPM users).
 
 you may still not want externalization support, which is turned off by simply not instantiating Externalizer.
