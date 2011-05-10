@@ -1,0 +1,5 @@
+#summary milestones for the next release
+#labels Phase-Requirements
+  * implement JPA adapter;
+  * move flex library to `as3commons-bytecode` and `as3commons-reflect` (which requires moving the library to SDK 4.0);
+  * finally start working on Wrenched Toolkit
