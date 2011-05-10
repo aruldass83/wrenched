@@ -1,4 +1,5 @@
 #summary configuring lazy loading
+#labels Phase-Design,Phase-Implementation
 
 configuring lazy loading in Wrenched is a bit more complex and will require some coding, but not much.
 
@@ -14,6 +15,15 @@ as usual, a channel has to be configured in BlazeDS' `services-config.xml`, but 
 }}}
 
 unfortunately Flash hides all the serialization business, so, unlike Java side, it is impossible to customize it on levels of i/o streams (which would've been "symmetrical" and therefore - most appropriate). Wrenched only provides a custom AMF channel, that instruments already deserialized data as it passes through. 
+
+in order to handle proxies properly a custom `JavaAdapter` must be configured as well:
+
+{{{
+<adapter-definition id="java-object"
+	class="com.wrenched.core.messaging.services.remoting.adapters.InstrumentingJavaAdapter" default="true"/>
+}}}
+
+`InstrumentingJavaAdapter` instruments values and handles proxies as provided by corresponding adapter (see *Setup*).
 
 == providers ==
 
