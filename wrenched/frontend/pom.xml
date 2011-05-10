@@ -103,11 +103,15 @@
 					<accessible>true</accessible>
 					<debug>true</debug>
 					<output>${project.build.directory}/${project.build.finalName}.swc</output>
-					<includeSources>
-						<sources>${project.build.directory}/generated-sources/flexmojos</sources>
-						<sources>${project.build.sourceDirectory}</sources>
-					</includeSources>
-					<includes>	
+					<includeAsClasses>
+						<sources>
+							<directory>${project.build.directory}/generated-sources/flexmojos</directory>
+						</sources>
+						<sources>
+							<directory>${project.build.sourceDirectory}</directory>
+						</sources>
+					</includeAsClasses>
+					<includes>
 						<include>org.granite.collections.IMap</include>
 						<include>org.granite.util.Enum</include>
 					</includes>
