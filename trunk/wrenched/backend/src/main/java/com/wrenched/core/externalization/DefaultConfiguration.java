@@ -5,16 +5,12 @@ import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.wrenched.core.domain.ExternalizableDecorator;
 import com.wrenched.core.domain.ExternalizableMap;
-import com.wrenched.core.externalization.Externalizer.Configuration;
 import com.wrenched.core.externalization.Externalizer.Converter;
 
 import flex.messaging.io.ArrayCollection;
@@ -25,24 +21,10 @@ import flex.messaging.io.ArrayCollection;
  * @author konkere
  *
  */
-public class DefaultConfiguration implements Configuration {
-	public Converter findConverter(Class clazz) {
-		Converter c = null;
-		
-		while (c == null && clazz != null) {
-			c = converters.get(clazz);
-			clazz = clazz.getSuperclass();
-		}
-		
-		return c;
-	}
-
+public class DefaultConfiguration extends AbstractConfiguration {
 	public boolean useGAS3() {
 		return true;
 	}
-
-	private static final Map<Class, Converter> converters =
-		new HashMap<Class, Converter>();
 
 	static {
 		converters.put(AbstractMap.class, new Converter<Map, Externalizable>() {
