@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
 class FactoryFinder {
 	static SecuritySupport ss = new SecuritySupport();
 
@@ -19,11 +22,12 @@ class FactoryFinder {
 	 * 
 	 *            Package private so this code can be shared.
 	 */
-	static Object find(String factoryId) throws ConfigurationError {
+	static Object[] find(String factoryId) throws ConfigurationError {
 		// Try Jar Service Provider Mechanism
-		String provider = findJarServiceProvider(factoryId);
+		String[] providers = findJarServiceProvider(factoryId);
+		Object[] factories = new Object[providers.length];
 
-		if (provider != null && !"".equals(provider)) {
+		if (providers != null && providers.length > 0) {
 			// Note: here we do not want to fall back to the current
 			// ClassLoader because we want to avoid the case where the
 			// resource file was found using one ClassLoader and the
@@ -34,17 +38,23 @@ class FactoryFinder {
 				throw new ConfigurationError("", new ClassNotFoundException(factoryId));
 			}
 			else {
-				try {
-					return cl.loadClass(provider).newInstance();
+				for (int i = 0; i < providers.length; i++) {
+					try {
+						if (providers[i] != null) {
+							factories[i] = cl.loadClass(providers[i]).newInstance();
+						}
+					}
+					catch (ClassNotFoundException x) {
+						throw new ConfigurationError(
+								"Provider " + providers[i] + " not found", x);
+					}
+					catch (Exception x) {
+						throw new ConfigurationError("Provider " + providers[i]
+								+ " could not be instantiated: " + x, x);
+					}
 				}
-				catch (ClassNotFoundException x) {
-					throw new ConfigurationError(
-							"Provider " + provider + " not found", x);
-				}
-				catch (Exception x) {
-					throw new ConfigurationError("Provider " + provider
-							+ " could not be instantiated: " + x, x);
-				}
+				
+				return factories;
 			}
 		}
 		else {
@@ -52,37 +62,38 @@ class FactoryFinder {
 		}
 	}
 
-	/*
-	 * Try to find provider using Jar Service Provider Mechanism
-	 * 
-	 * @return instance of provider class if found or null
-	 */
-	private static String findJarServiceProvider(String factoryId) throws ConfigurationError {
+	private static String[] findJarServiceProvider(String factoryId) throws ConfigurationError {
 		String serviceId = "META-INF/services/" + factoryId;
-		InputStream is = null;
-
+		
 		// First try the Context ClassLoader
 		ClassLoader cl = ss.getContextClassLoader();
-		if (cl != null) {
-			is = ss.getResourceAsStream(cl, serviceId);
-
-			// If no provider found then try the current ClassLoader
-			if (is == null) {
-				cl = FactoryFinder.class.getClassLoader();
-				is = ss.getResourceAsStream(cl, serviceId);
-			}
-		}
-		else {
+		if (cl == null) {
 			// No Context ClassLoader, try the current ClassLoader
 			cl = FactoryFinder.class.getClassLoader();
-			is = ss.getResourceAsStream(cl, serviceId);
 		}
+		try {
+			Resource[] resources =
+				new PathMatchingResourcePatternResolver(cl).getResources(PathMatchingResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX + serviceId);
+			String[] factories = new String[resources.length];
+			
+			for (int i = 0; i < resources.length; i++) {
+				try {
+					factories[i] = readFactoryClassName(resources[i].getInputStream());
+				}
+				catch (IOException ioe) {
+					factories[i] = null;
+					continue;
+				}
+			}
 
-		if (is == null) {
-			// No provider found
+			return factories;
+		}
+		catch (IOException ioe) {
 			return null;
 		}
-
+	}
+	
+	private static String readFactoryClassName(InputStream is) {
 		BufferedReader rd;
 		try {
 			rd = new BufferedReader(new InputStreamReader(is, "UTF-8"));

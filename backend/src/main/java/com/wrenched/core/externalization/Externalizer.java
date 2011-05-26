@@ -6,41 +6,37 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.Collection;
 
 import javax.persistence.Entity;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.wrenched.core.messaging.io.ExternalizableDecoratingPropertyProxy;
-
-import flex.messaging.io.PropertyProxyRegistry;
+import com.wrenched.core.services.support.ClassIntrospectionUtil.Operation;
+import static com.wrenched.core.services.support.ClassIntrospectionUtil.getAllFields;
 
 /**
- * Externalization support for AMF
+ * Externalization support
  * @author konkere
  *
  */
 public class Externalizer {
 	private static final Log logger = LogFactory.getLog(Externalizer.class);
 	
-	private static final Comparator<Field> PROPERTY_COMPARATOR = new Comparator<Field>() {
-		public int compare(Field o1, Field o2) {
-			return o1.getName().compareTo(o2.getName());
-		}
-	};
-	
 	private static Externalizer instance;
 	
 	private final Configuration configuration;
 	
 	public static Externalizer getInstance() {
-		Configuration config = (Configuration)FactoryFinder.find(Configuration.class.getCanonicalName());
+		Configuration config = null;
+		
+		try {
+			config = new AggregatingConfiguration();
+		}
+		catch (InstantiationException ie) {
+			config = null;
+		}
 		return getInstance(config == null ? new DefaultConfiguration() : config);
 	}
 	
@@ -50,50 +46,6 @@ public class Externalizer {
 		}
 		return instance;
 	}
-	
-	/**
-	 * 
-	 * @param targetClassNames
-	 */
-	public static void registerDecoratorsFor(String[] targetClassNames) {
-		for (String className : targetClassNames) {
-			try {
-				registerDecoratorFor(className);
-			}
-			catch (ClassNotFoundException e) {
-				continue;
-			}
-		}
-	}
-
-	/**
-	 * 
-	 * @param targetClasses
-	 */
-	public static void registerDecoratorsFor(Class[] targetClasses) {
-		for (Class<?> targetClass : targetClasses) {
-			registerDecoratorFor(targetClass);
-		}
-	}
-
-	/**
-	 * 
-	 * @param targetClassName
-	 * @throws ClassNotFoundException
-	 */
-	public static void registerDecoratorFor(String targetClassName) throws ClassNotFoundException {
-		registerDecoratorFor(Class.forName(targetClassName));
-	}
-
-	/**
-	 * 
-	 * @param targetClass
-	 */
-	public static void registerDecoratorFor(Class<?> targetClass) {
-		PropertyProxyRegistry.getRegistry().register(targetClass,
-				new ExternalizableDecoratingPropertyProxy());
-	}
-
 	
 	private Externalizer(Configuration config) {
 		this.configuration = config;
@@ -148,30 +100,148 @@ public class Externalizer {
 	}
 	
 	/**
-	 * helper interface which encapsulates operations on two types of fields: primitive and object
-	 * @author zhariil
+	 * helper class which encapsulates operations on two types of fields: primitive and object
+	 * @author konkere
 	 *
 	 * @param <T>
 	 */
-	private interface Operation<T> {
+	private abstract class SelectiveOperation<T> extends Operation<Field> {
+		protected final ThreadLocal<T> delegate = new ThreadLocal<T>();
+		
+		void setDelegate(T arg0) {
+			if (this.delegate.get() == null) {
+				this.delegate.set(arg0);
+			}
+		}
+		
 		/**
 		 * performs an operation on a primitive {@code f} of {@code t}
 		 * @param t target object
 		 * @param f target field
-		 * @throws IOException
 		 * @throws IllegalAccessException
 		 */
-		public void doPrimitive(Object t, Field f) throws IOException, IllegalAccessException;
+		public abstract void doPrimitive(Object t, Field f) throws IllegalAccessException;
 		
 		/**
 		 * performs an operation on an object {@code f} of {@code t}
 		 * @param t
 		 * @param f
-		 * @throws IOException
 		 * @throws IllegalAccessException
 		 */
-		public void doObject(Object t, Field f) throws IOException, IllegalAccessException;
+		public abstract void doObject(Object t, Field f) throws IllegalAccessException;
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.wrenched.core.services.support.ClassIntrospectionUtil.Operation#process(java.lang.Object, java.lang.reflect.AccessibleObject)
+		 */
+		@Override
+		public final void process(Object t, Field f) throws IllegalAccessException {
+			if (this.delegate.get() == null) {
+				throw new RuntimeException("no delegate is set for current thread!");
+			}
+			if (f.getType().isPrimitive()) {
+				this.doPrimitive(t, f);
+			}
+			else {
+				this.doObject(t, f);
+			}
+		}
 	}
+	
+	/**
+	 * thread-safe stream reader
+	 */
+	private final SelectiveOperation<ObjectInput> READER =
+		new SelectiveOperation<ObjectInput>() {
+			@Override
+			public void doObject(Object t, Field f) throws IllegalAccessException {
+				try {
+					Object o = this.delegate.get().readObject();
+					
+					if (o != null) {
+						logger.info("converting " + o.getClass().getCanonicalName() + " to " + f.getType().getCanonicalName());
+						o = configuration.findConverter(o.getClass()).convert(o, f.getType());
+					}
+					
+					f.set(t, o);
+				}
+				catch (ClassNotFoundException e) {
+					f.set(t, null);
+				}
+				catch (IllegalArgumentException iae) {
+					f.set(t, null);
+					report(t, f, iae);
+				}
+				catch (IOException ioe) {
+					f.set(t, null);
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
+				try {
+					readPrimitive(t, f, this.delegate.get());
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);					
+				}
+			}
+			
+			@Override
+			public boolean isRelevant(Field f) {
+				return Externalizer.this.isRelevant(f);
+			}
+			
+			@Override
+			public Field[] getFields(Object t) {
+				Collection<Field> result = getDeclaredFields(t);
+				return result.toArray(new Field[result.size()]);
+			}
+		};
+	
+	/**
+	 * thread-safe stream-writer
+	 */
+	private final SelectiveOperation<ObjectOutput> WRITER =
+		new SelectiveOperation<ObjectOutput>() {
+			@Override
+			public void doObject(Object t, Field f) throws IllegalAccessException {
+				Object o = f.get(t);
+				
+				if (o != null) {
+					o = configuration.findConverter(o.getClass()).convert(o, Externalizable.class);
+				}
+				
+				try {
+					this.delegate.get().writeObject(o);
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
+				try {
+					writePrimitive(t, f, this.delegate.get());
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public boolean isRelevant(Field f) {
+				return Externalizer.this.isRelevant(f);
+			}
+			
+			@Override
+			public Field[] getFields(Object t) {
+				Collection<Field> result = getDeclaredFields(t);
+				return result.toArray(new Field[result.size()]);
+			}
+		};
 	
 	/**
 	 * get all declared and inherited fields of {@code target} 
@@ -180,31 +250,10 @@ public class Externalizer {
 	 * @param target
 	 * @return
 	 */
-	private List<Field> getDeclaredFields(Object target) {
-		List<Field> properties = new ArrayList<Field>();
-		Class<?> ss = target.getClass();
-		
-		do {
-			List<Field> currentProps = Arrays.asList(ss.getDeclaredFields());
-			
-			if (this.configuration.useGAS3()) {
-				Collections.sort(currentProps, PROPERTY_COMPARATOR);
-			}
-			
-			properties.addAll(0, currentProps);
-			ss = ss.getSuperclass();
-		} while (ss != null);
-
-		
+	private Collection<Field> getDeclaredFields(Object target) {
+		Collection<Field> properties = getAllFields(target.getClass(), this.configuration.useGAS3());
 		logger.debug("found " + properties + " on " + target.getClass().getCanonicalName());
-		 
 		return properties;
-	}
-	
-	private void overrideAccess(Field f) {
-		if (Modifier.isFinal(f.getModifiers()) || Modifier.isPrivate(f.getModifiers())) {
-			f.setAccessible(true);
-		}
 	}
 	
 	/**
@@ -252,38 +301,19 @@ public class Externalizer {
 		out.writeObject("");
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
+	 */
 	public void readExternal(Object target, final ObjectInput in) throws IOException {
 		logger.debug("reading " + target.getClass().getCanonicalName());
 		
 		if (this.isEntity(target) && this.configuration.useGAS3()) {
 			this.readEntityHeader(in);
 		}
-		
-		this.doOperate(target, new Operation<ObjectInput>() {
-			public void doObject(Object t, Field f) throws IllegalAccessException, IOException {
-				try {
-					Object o = in.readObject();
-					
-					if (o != null) {
-						logger.info("converting " + o.getClass().getCanonicalName() + " to " + f.getType().getCanonicalName());
-						o = configuration.findConverter(o.getClass()).convert(o, f.getType());
-					}
-					
-					f.set(t, o);
-				}
-				catch (ClassNotFoundException e) {
-					f.set(t, null);
-				}
-				catch (IllegalArgumentException iae) {
-					f.set(t, null);
-					report(t, f, iae);
-				}
-			}
 
-			public void doPrimitive(Object t, Field f) throws IllegalAccessException, IOException {
-				readPrimitive(t, f, in);
-			}
-		});
+		READER.setDelegate(in);
+		READER.introspect(target);
 	}
 
 	/*
@@ -297,53 +327,8 @@ public class Externalizer {
 			this.writeEntityHeader(out);
 		}
 		
-		this.doOperate(target, new Operation<ObjectOutput>() {
-			public void doObject(Object t, Field f) throws IOException, IllegalAccessException {
-				Object o = f.get(t);
-				
-				if (o != null) {
-					o = configuration.findConverter(o.getClass()).convert(o, Externalizable.class);
-				}
-				out.writeObject(o);
-			}
-
-			public void doPrimitive(Object t, Field f) throws IOException, IllegalAccessException {
-				writePrimitive(t, f, out);
-			}
-		});
-	}
-
-	/**
-	 * performs externalization on {@code target} using specified {@code operation}
-	 * @param <T>
-	 * @param target
-	 * @param operation
-	 * @throws IOException
-	 */
-	private <T> void doOperate(Object target, Operation<T> operation) throws IOException {
-		for (Field f : this.getDeclaredFields(target)) {
-//			this.overrideAccess(f);
-			f.setAccessible(true);
-
-			//check if it's not a constant
-			if (!this.isRelevant(f)) {
-				continue;
-			}
-			
-			logger.debug("processing " + f.toString());
-			
-			try {
-				if (f.getType().isPrimitive()) {
-					operation.doPrimitive(target, f);
-				}
-				else {
-					operation.doObject(target, f);
-				}
-			}
-			catch (IllegalAccessException iae) {
-				report(target, f, iae);
-			}
-		}
+		WRITER.setDelegate(out);
+		WRITER.introspect(target);
 	}
 
 	/**
@@ -370,32 +355,31 @@ public class Externalizer {
 		}
 		
 		if (c.isAssignableFrom(Boolean.TYPE)) {
-			f.setBoolean(target, ((Boolean)value).booleanValue()/*in.readBoolean()*/);
+			f.setBoolean(target, ((Boolean)value).booleanValue());
 		}
 		else if (c.isAssignableFrom(Byte.TYPE)) {
 			if (value instanceof Number) {
-				f.setByte(target, ((Number)value).byteValue()/*in.readByte()*/);
+				f.setByte(target, ((Number)value).byteValue());
 			}
 		}
 		else if (c.isAssignableFrom(Short.TYPE)) {
 			if (value instanceof Number) {
-				f.setShort(target, ((Number)value).shortValue()/*in.readShort()*/);
+				f.setShort(target, ((Number)value).shortValue());
 			}
 		}
 		else if (c.isAssignableFrom(Integer.TYPE)) {
 			if (value instanceof Number) {
-				f.setInt(target, ((Number)value).intValue()/*in.readInt()*/);
+				f.setInt(target, ((Number)value).intValue());
 			}
 		}
 		else if (c.isAssignableFrom(Long.TYPE)) {
 			if (value instanceof Number) {
-				f.setLong(target, ((Number)value).longValue()/*in.readLong()*/);
+				f.setLong(target, ((Number)value).longValue());
 			}
 		}
 		else if (c.isAssignableFrom(Float.TYPE)) {
 			if (value instanceof Number) {
 				float tmp = ((Number)value).floatValue();
-//				float tmp = in.readFloat();
 				if (Float.compare(Float.NaN, tmp) != 0) {
 					f.setFloat(target, tmp);
 				}
@@ -404,7 +388,6 @@ public class Externalizer {
 		else if (c.isAssignableFrom(Double.TYPE)) {
 			if (value instanceof Number) {
 				double tmp = ((Number)value).doubleValue();
-//				double tmp = in.readDouble();
 				if (Double.compare(Double.NaN, tmp) != 0) {
 					f.setDouble(target, tmp);
 				}
@@ -429,43 +412,26 @@ public class Externalizer {
 		
 		if (c.isAssignableFrom(Boolean.TYPE)) {
 			value = Boolean.valueOf(f.getBoolean(target));
-//			out.writeBoolean(f.getBoolean(target));
 		}
 		else if (c.isAssignableFrom(Byte.TYPE)) {
 			value = Byte.valueOf(f.getByte(target));
-//			out.writeByte(f.getByte(target));
 		}
 		else if (c.isAssignableFrom(Short.TYPE)) {
 			value = Short.valueOf(f.getShort(target));
-//			out.writeShort(f.getShort(target));
 		}
 		else if (c.isAssignableFrom(Integer.TYPE)) {
 			value = Integer.valueOf(f.getInt(target));
-//			out.writeInt(f.getInt(target));
 		}
 		else if (c.isAssignableFrom(Long.TYPE)) {
 			value = Long.valueOf(f.getLong(target));
-//			out.writeLong(f.getLong(target));
 		}
 		else if (c.isAssignableFrom(Float.TYPE)) {
 			float tmp = f.getFloat(target);
 			value = Float.compare(Float.NaN, tmp) != 0 ? tmp : null;
-//			if (Float.compare(Float.NaN, tmp) != 0 ){
-//				out.writeFloat(tmp);
-//			}
-//			else{
-//				out.writeObject(null);
-//			}
-			
 		}
 		else if (c.isAssignableFrom(Double.TYPE)) {
 			double tmp = f.getDouble(target);
 			value = Double.compare(Double.NaN, tmp) != 0 ? tmp : null;
-//			if (Double.compare(Double.NaN, tmp) != 0 ){
-//				out.writeDouble(tmp);
-//			}else{
-//				out.writeObject(null);
-//			}
 		}
 		
 		out.writeObject(value);

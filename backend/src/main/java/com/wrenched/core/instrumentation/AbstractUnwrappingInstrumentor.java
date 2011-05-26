@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 import com.wrenched.core.services.MetadataLoader;
+import com.wrenched.core.services.support.ClassIntrospectionUtil.Operation;
 
 /**
  * convenient implementation of unwrapping proxies and exposing
@@ -20,7 +21,10 @@ public abstract class AbstractUnwrappingInstrumentor implements ProxyInstrumento
 	 * @see com.wrenched.core.services.support.PersistentProxyInstrumentor#unwrap(java.lang.Object)
 	 */
 	public Object unwrap(Object o) throws NoSuchFieldException {
-    	if (this.isSimpleProxy(o)) {
+		if (o == null) {
+			return o;
+		}
+		else if (this.isSimpleProxy(o)) {
     		return evictProxies(this.getProxyTarget(o));
     	}
     	else if (this.isCollectionProxy(o)) {
@@ -43,23 +47,40 @@ public abstract class AbstractUnwrappingInstrumentor implements ProxyInstrumento
      * @return
      * @throws NoSuchFieldException
      */
-    protected Object evictProxies(Object o) throws NoSuchFieldException{
-    	LazyAttributeRegistryDescriptor def = MetadataLoader.getInstance().getManagedClass(o.getClass());
+    protected Object evictProxies(Object o) throws NoSuchFieldException {
+    	final LazyAttributeRegistryDescriptor def = MetadataLoader.getInstance().getManagedClass(o.getClass());
     	
     	if (def != null) {
-	    	for (String attributeName : def.attributes) {
-				try {
-		    		Field f = o.getClass().getDeclaredField(attributeName);
-		    		f.setAccessible(true);
-		    		f.set(o, null);
+    		new Operation<Field>() {
+				@Override
+				public void process(Object t, Field f) throws IllegalAccessException {
+					f.set(t, null);
 				}
-				catch (IllegalArgumentException e) {
-					//not possible
+
+				@Override
+				public boolean isRelevant(Field f) {
+					return def.attributes.contains(f.getName());
 				}
-				catch (IllegalAccessException e) {
-					//not possible
+
+				@Override
+				public Field[] getFields(Object t) {
+					return t.getClass().getDeclaredFields();
 				}
-	    	}
+    		}.introspect(o);
+    		
+//	    	for (String attributeName : def.attributes) {
+//				try {
+//		    		Field f = o.getClass().getDeclaredField(attributeName);
+//		    		f.setAccessible(true);
+//		    		f.set(o, null);
+//				}
+//				catch (IllegalArgumentException e) {
+//					//not possible
+//				}
+//				catch (IllegalAccessException e) {
+//					//not possible
+//				}
+//	    	}
     	}    	
 
     	return o;
