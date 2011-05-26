@@ -20,7 +20,7 @@ import com.wrenched.core.services.support.LazyAttributeProvider;
 import com.wrenched.core.services.support.MethodBasedAttributeProvider;
 import com.wrenched.core.services.support.PersistenceBasedAttributeProvider;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 public class LazyAttributeProviderAnnotationPostProcessor implements InstantiationAwareBeanPostProcessor, PriorityOrdered, BeanFactoryAware, Serializable {
 	private int order = Ordered.LOWEST_PRECEDENCE - 4;
