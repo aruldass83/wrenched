@@ -5,7 +5,7 @@
 	<artifactId>wrenched-core</artifactId>
 	<packaging>jar</packaging>
 	<version>${wrenched.version}</version>
-	<name>Wrenched Core for Java</name>
+	<name>Wrenched Core server-side</name>
 	<parent>
 		<groupId>com.wrenched.core</groupId>
 		<artifactId>wrenched</artifactId>
@@ -16,21 +16,6 @@
 			<groupId>javax.persistence</groupId>
 			<artifactId>persistence-api</artifactId>
 			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.adobe.blazeds</groupId>
-			<artifactId>blazeds-core</artifactId>
-			<version>${blazeds.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.adobe.blazeds</groupId>
-			<artifactId>blazeds-common</artifactId>
-			<version>${blazeds.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.adobe.blazeds</groupId>
-			<artifactId>blazeds-remoting</artifactId>
-			<version>${blazeds.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
@@ -51,12 +36,6 @@
 					<artifactId>aopalliance</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.5</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
