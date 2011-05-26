@@ -52,6 +52,13 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.wrenched.core</groupId>
+			<artifactId>wrenched-core-blazeds</artifactId>
+			<version>${wrenched.version}</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.adobe.flex.framework</groupId>
 			<artifactId>flex-framework</artifactId>
 			<version>${flex.version}</version>
