@@ -1,5 +1,6 @@
 package com.wrenched.core.exchange;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.wrenched.core.domain.AbstractExternalizableEntity;
@@ -13,7 +14,7 @@ public class TestEntity extends AbstractExternalizableEntity {
 	private int a1;
 	private boolean a2;
 	private final TestEnum a3 = TestEnum.TRK;
-	protected Object a4;
+	protected Serializable a4;
 	public String[] a5;
 	public List<Integer> a6;
 	
@@ -32,10 +33,10 @@ public class TestEntity extends AbstractExternalizableEntity {
 	public TestEnum getA3() {
 		return a3;
 	}
-	public Object getA4() {
+	public Serializable getA4() {
 		return a4;
 	}
-	public void setA4(Object a4) {
+	public void setA4(Serializable a4) {
 		this.a4 = a4;
 	}
 	public String[] getA5() {
