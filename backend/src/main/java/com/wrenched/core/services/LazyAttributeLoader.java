@@ -19,19 +19,14 @@ import com.wrenched.core.services.support.LazyAttributeProvider;
  * @author konkere
  *
  */
-public class LazyAttributeLoader {
+public class LazyAttributeLoader implements LazyAttributeLoaderService {
 	private Map<String, LazyAttributeProvider> providers =
 		new HashMap<String, LazyAttributeProvider>();
 	
-	/**
-	 * loads an {@code attributeName} which is declared lazy-loaded on {@code entityName} and returns an
-	 * externalizable wrapper to be transferred outside. 
-	 * @param entityName
-	 * @param entityId
-	 * @param attributeName
-	 * @return
-	 * @throws IllegalAccessException
+	/* (non-Javadoc)
+	 * @see com.wrenched.core.services.LazyAttributeLoaderService#loadAttribute(java.lang.String, java.lang.Object, java.lang.String)
 	 */
+	@Override
 	public LazyAttribute loadAttribute(String entityName, Object entityId, String attributeName) throws IllegalAccessException {
 		LazyAttributeProvider provider = this.findProvider(entityName);
 		
@@ -48,6 +43,10 @@ public class LazyAttributeLoader {
 		}
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.wrenched.core.services.LazyAttributeLoaderService#getManagedClasses()
+	 */
+	@Override
 	public Collection<LazyAttributeRegistryDescriptor> getManagedClasses() {
 		Collection<LazyAttributeRegistryDescriptor> classes =
 			new ArrayList<LazyAttributeRegistryDescriptor>();
