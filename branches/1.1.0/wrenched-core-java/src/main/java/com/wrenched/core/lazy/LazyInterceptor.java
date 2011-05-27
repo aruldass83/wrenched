@@ -1,8 +1,11 @@
 package com.wrenched.core.lazy;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import javassist.util.proxy.MethodHandler;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -10,7 +13,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import com.wrenched.core.domain.LazyAttribute;
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
 
-public class LazyInterceptor implements MethodInterceptor {
+public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 	private static final String LOAD = "__load";
 	private static final String LOADING = "__loading";
 
@@ -32,26 +35,36 @@ public class LazyInterceptor implements MethodInterceptor {
 	}
 
 	public Object invoke(MethodInvocation invocation) throws Throwable {
-        if (this.started) {
-            String attributeName = getAttributeName(invocation.getMethod());
-
-            if ((attributeName) != null && !this.isAttributeLoaded(attributeName) && !this.isLoading(attributeName)) {
-                this.loading.put(getLoadingFlagName(attributeName), true);
-                               
-                //if the attribute has data, perhaps it's better to keep it
-                if (isEmpty(getAttributeValue(invocation.getThis(), attributeName))) {
-					this.process(invocation.getThis(),
-							LazyAttributeRegistry.getInstance().load(this.clazz, this.id, attributeName));
-                }
-                else {
-                    this.deleteLoader(attributeName);
-                }
-            }
-        }
-        
+		this.load(invocation.getThis(), invocation.getMethod());
         return invocation.proceed();                  
 	}
 
+	@Override
+	public Object invoke(Object arg0, Method arg1, Method arg2, Object[] arg3) throws Throwable {
+		this.load(arg0, arg1);
+		return arg1.invoke(arg0, arg3);
+	}
+
+	private void load(Object arg0, Method arg1) throws Throwable {
+	    if (this.started) {
+	        String attributeName = getAttributeName(arg1);
+	
+	        if ((attributeName) != null && !this.isAttributeLoaded(attributeName) && !this.isLoading(attributeName)) {
+	            this.loading.put(getLoadingFlagName(attributeName), true);
+	                           
+	            //if the attribute has data, perhaps it's better to keep it
+	            if (isEmpty(getAttributeValue(arg0, attributeName))) {
+					this.process(arg0,
+							LazyAttributeRegistry.getInstance().load(this.clazz, this.id, attributeName));
+	            }
+	            else {
+	                this.deleteLoader(attributeName);
+	            }
+	        }
+	    }
+	}
+	
+	
 	void start() {
 		started = true;
 	}

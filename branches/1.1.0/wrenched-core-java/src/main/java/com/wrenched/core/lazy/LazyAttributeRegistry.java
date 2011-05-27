@@ -1,5 +1,6 @@
 package com.wrenched.core.lazy;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -7,9 +8,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javassist.util.proxy.MethodFilter;
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.ProxyFactory;
+
 import com.wrenched.core.domain.LazyAttribute;
 import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
-import com.wrenched.core.services.LazyAttributeLoader;
+import com.wrenched.core.services.LazyAttributeLoaderService;
 import com.wrenched.util.ReflectionUtil.CallbackCopyOperation;
 
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
@@ -18,7 +23,7 @@ public class LazyAttributeRegistry {
 	static final Map<Class, LazyAttributeRegistryDescriptor> classes =
 		new HashMap<Class, LazyAttributeRegistryDescriptor>();
 	
-	final LazyAttributeLoader loader;
+	final LazyAttributeLoaderService loader;
 	
 	private static LazyAttributeRegistry instance;
 	
@@ -26,7 +31,7 @@ public class LazyAttributeRegistry {
 		return instance;
 	}
 
-	public static LazyAttributeRegistry getInstance(LazyAttributeLoader loader) {
+	public static LazyAttributeRegistry newInstance(LazyAttributeLoaderService loader) {
 		if (instance == null && loader != null) {
 			instance = new LazyAttributeRegistry(loader);
 		}
@@ -34,7 +39,7 @@ public class LazyAttributeRegistry {
 		return instance;
 	}
 	
-	private LazyAttributeRegistry(LazyAttributeLoader l) {
+	private LazyAttributeRegistry(LazyAttributeLoaderService l) {
 		loader = l;
 		for (LazyAttributeRegistryDescriptor def : loader.getManagedClasses()) {
 			try {
@@ -92,8 +97,7 @@ public class LazyAttributeRegistry {
 						new LazyInterceptor(def.className,
 								id,
 								def.attributes.toArray(new String[def.attributes.size()]));
-					Object proxy = null;
-					//TODO: create proxy here
+					Object proxy = getProxy(Class.forName(def.className), interceptor);
 
 					context.put(proxy, proxy);
 					context.put(obj, proxy);
@@ -124,7 +128,21 @@ public class LazyAttributeRegistry {
 		}
 
 		return obj;
-	} 
+	}
+	
+	private static final MethodFilter FINALIZE_FILTER = new MethodFilter() {
+		public boolean isHandled(Method m) {
+			// skip finalize methods
+			return !( m.getParameterTypes().length == 0 && m.getName().equals( "finalize" ) );
+		}
+	};
+	private static Object getProxy(Class clazz, MethodHandler handler) throws InstantiationException, IllegalAccessException {
+		ProxyFactory factory = new ProxyFactory();
+		factory.setSuperclass(clazz);
+		factory.setFilter(FINALIZE_FILTER);
+		factory.setHandler(handler);
+		return factory.createClass().newInstance();
+	}
 
 	private static Object resolveId(LazyAttributeRegistryDescriptor def, Object obj) {
 		if (def.idName instanceof String) {			
