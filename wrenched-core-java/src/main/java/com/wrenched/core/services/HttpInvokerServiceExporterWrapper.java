@@ -2,27 +2,80 @@ package com.wrenched.core.services;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.OutputStream;
+import java.rmi.RemoteException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter;
+import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.remoting.support.RemoteInvocationResult;
 
-import com.wrenched.core.externalization.io.ExternalizingObjectInputStream;
-import com.wrenched.core.externalization.io.ExternalizingObjectOutputStream;
+import com.caucho.hessian.client.HessianProxyFactory;
+import com.caucho.hessian.io.SerializerFactory;
+import com.wrenched.core.externalization.io.HessianInputStream;
+import com.wrenched.core.externalization.io.HessianOutputStream;
+import com.wrenched.core.instrumentation.ProxyInstrumentor;
 
 public class HttpInvokerServiceExporterWrapper extends HttpInvokerServiceExporter {
-	@Override
-	protected InputStream decorateInputStream(HttpServletRequest request,
-			InputStream is) throws IOException {
-		return new ExternalizingObjectInputStream(is);
+	private final HessianProxyFactory proxyFactory = new HessianProxyFactory();
+	private final ProxyInstrumentor instrumentor;
+
+	public HttpInvokerServiceExporterWrapper() {
+		//find an appropriate instrumentor using jar discovery
+		instrumentor = (ProxyInstrumentor)FactoryFinder.find(ProxyInstrumentor.class.getCanonicalName());				
 	}
 
 	@Override
-	protected OutputStream decorateOutputStream(HttpServletRequest request,
-			HttpServletResponse response, OutputStream os) throws IOException {
-		return new ExternalizingObjectOutputStream(os);
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
+		
+		SerializerFactory sf = new SerializerFactory();
+		sf.setAllowNonSerializable(true);
+		
+		this.proxyFactory.setSerializerFactory(sf);
+		proxyFactory.setHessian2Request(true);
+	}
+	
+	protected RemoteInvocation readRemoteInvocation(HttpServletRequest request,
+			InputStream is) throws IOException, ClassNotFoundException {
+		ObjectInput oi = new HessianInputStream(proxyFactory.getHessianInput(is));
+		try {
+			Object obj = oi.readObject();
+			if (!(obj instanceof RemoteInvocation)) {
+				throw new RemoteException(
+						"Deserialized object needs to be assignable to type ["
+								+ RemoteInvocation.class.getName() + "]: " + obj);
+			}
+			return (RemoteInvocation) obj;
+		} finally {
+			oi.close();
+		}
 	}
 
+	protected final void writeRemoteInvocationResult(
+			HttpServletRequest request, HttpServletResponse response, RemoteInvocationResult result, OutputStream os)
+			throws IOException {
+		ObjectOutput oo = new HessianOutputStream(proxyFactory.getHessianOutput(os));
+		RemoteInvocationResult unwrap = result;
+
+		try {
+			if (instrumentor != null) {
+				try {
+					unwrap = new RemoteInvocationResult(instrumentor.unwrap(unwrap.getValue()));
+				}
+				catch (NoSuchFieldException nsfe) {
+				}
+			}
+			
+			oo.writeObject(unwrap);
+			oo.flush();
+		}
+		finally {
+			oo.close();
+		}
+	}
 }

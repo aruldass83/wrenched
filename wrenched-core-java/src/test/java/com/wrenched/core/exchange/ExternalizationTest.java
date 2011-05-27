@@ -8,9 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,11 +20,22 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import com.wrenched.core.externalization.Externalizer;
-import com.wrenched.core.externalization.io.ExternalizingObjectInputStream;
-import com.wrenched.core.externalization.io.ExternalizingObjectOutputStream;
+import com.caucho.hessian.client.HessianProxyFactory;
+import com.caucho.hessian.io.SerializerFactory;
+import com.wrenched.core.externalization.io.HessianInputStream;
+import com.wrenched.core.externalization.io.HessianOutputStream;
 
 public class ExternalizationTest extends TestCase {
+	private final HessianProxyFactory proxyFactory = new HessianProxyFactory();
+
+	public ExternalizationTest() {
+		SerializerFactory sf = new SerializerFactory();
+		sf.setAllowNonSerializable(true);
+		
+		this.proxyFactory.setSerializerFactory(sf);
+		proxyFactory.setHessian2Request(true);
+	}
+	
 	public void testClassSubstitution1() {
 		Class z = HashSet.class;
 		Object o = new ArrayList();
@@ -64,15 +73,12 @@ public class ExternalizationTest extends TestCase {
 			
 			fOut = new FileOutputStream(f);
 			bOut = new BufferedOutputStream(fOut);
-			oOut = new ExternalizingObjectOutputStream(bOut);
-//			Externalizer.getInstance().writeExternal(entity, oOut);
+			oOut = new HessianOutputStream(proxyFactory.getHessianOutput(bOut));
 			oOut.writeObject(entity);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+			fail();
 		}
 		finally {
 			try {
@@ -98,18 +104,12 @@ public class ExternalizationTest extends TestCase {
 			entity = clazz.newInstance();
 			fIn = new FileInputStream(fileName);
 			bIn = new BufferedInputStream(fIn);
-			oIn = new ExternalizingObjectInputStream(bIn);
-//			Externalizer.getInstance().readExternal(entity, oIn);
+			oIn = new HessianInputStream(proxyFactory.getHessianInput(bIn));
 			entity = (T)oIn.readObject();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		catch (InstantiationException e2) {
-			e2.printStackTrace();
 		}
 		catch (Throwable e3) {
 			e3.printStackTrace();
+			fail();
 		}
 		finally {
 			try {
