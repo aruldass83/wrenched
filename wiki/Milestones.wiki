@@ -3,10 +3,11 @@
 
 ===1.0.1===
   * implement JPA adapter;
+  * deploy to a Maven repo.
 
 ==1.1.0==
-  * supposedly port Wrenched client-code to java to enable the same functionaliy for homogenious Java environments;
+  * supposedly port Wrenched client-code to java to enable the same functionaliy for homogenious Java environments.
 
 ==1.2.0==
   * move flex library to `as3commons-bytecode` and `as3commons-reflect` (which requires moving the library to SDK 4.0);
-  * finally start working on Wrenched Toolkit
+  * finally start working on Wrenched Toolkit.
