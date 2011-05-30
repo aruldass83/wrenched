@@ -8,7 +8,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -18,6 +22,7 @@ import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 
 public class ClassIntrospectionUtil {
 	public static final String PREFIX_GET = "get";
+	public static final String PREFIX_SET = "set";
 
 	private static final Comparator<Field> PROPERTY_COMPARATOR = new Comparator<Field>() {
 		public int compare(Field o1, Field o2) {
@@ -136,34 +141,63 @@ public class ClassIntrospectionUtil {
 		}
 	}
 	
-	public static void setAttributeValue(Object target, String attributeName, Object value) {
-		try {
-			Field f = target.getClass().getDeclaredField(attributeName);
-			f.setAccessible(true);
-			f.set(target, value);
-		}
-		catch (IllegalAccessException iae) {
-			
-		}
-		catch (NoSuchFieldException nsfe) {
-			
-		}
-	}
-
-	public static Object getAttributeValue(Object target, String attributeName) {
-		try {
-			Field f = target.getClass().getDeclaredField(attributeName);
-			f.setAccessible(true);
-			return f.get(target);
-		}
-		catch (IllegalAccessException iae) {
-			
-		}
-		catch (NoSuchFieldException nsfe) {
-			
-		}
+	/**
+	 * introspection class that traverses object trees
+	 * @author konkere
+	 *
+	 */
+	public static abstract class ObjectProcessor {
+		private final Map<Object, Object> context = new HashMap<Object, Object>();
 		
-		return null;
+		protected abstract Object doProcess(Object obj, ObjectProcessor processor);
+	
+		@SuppressWarnings({"unchecked", "rawtypes"})
+		public Object process(Object obj) {
+			if (obj == null || obj.getClass().isPrimitive() || obj instanceof Enum || obj instanceof String || obj instanceof Number) {
+			}
+			else if (context.containsKey(obj)) {
+				return context.get(obj);
+			}
+			else if (obj.getClass().isArray()) {
+				Object[] a = (Object[]) obj;
+				
+				for (int i = 0; i < a.length; i++) {
+					a[i] = process(a[i]);
+				}
+			}
+			else if (obj instanceof Collection) {
+				if (obj instanceof List) {
+					List l = (List) obj;
+					
+					for (int i = 0; i < l.size(); i++) {
+						l.set(i, process(l.get(i)));
+					}
+				}
+				else if (obj instanceof Set) {
+					Set s = (Set)obj;
+					
+					for (Object element : s.toArray(new Object[s.size()])) {
+						s.remove(element);
+						s.add(process(element));
+					}
+				}
+			}
+			else if (obj instanceof Map) {
+				for (Entry element : (Set<Entry>)((Map)obj).entrySet()) {
+					element.setValue(process(element.getValue()));
+				}
+			}
+			else {
+				Object processed = doProcess(obj, this);
+				
+				context.put(obj, processed);
+				context.put(processed, processed);
+				
+				return context.get(obj);
+			}
+	
+			return obj;
+		}
 	}
 	
 	public static Collection<String> getMethodNames(Class clazz) {
@@ -319,6 +353,10 @@ public class ClassIntrospectionUtil {
 
 	public static boolean isGetter(Method m) {
 		return m.getName().startsWith(PREFIX_GET);
+	}
+
+	public static boolean isSetter(Method m) {
+		return m.getName().startsWith(PREFIX_SET);
 	}
 	
 	public static String getAttributeName(Method m) {

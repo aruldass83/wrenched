@@ -17,7 +17,7 @@ public class ReflectionUtil {
 		}
 		@Override
 		protected void process(Object source, Field f) throws IllegalAccessException {
-			setAttributeValue(this.target, f.getName(), getAttributeValue(source, f.getName()));
+			setAttributeValue(this.target, f, getAttributeValue(source, f));
 		}
 
 		@Override
@@ -33,7 +33,7 @@ public class ReflectionUtil {
 		
 		@Override
 		public void introspect(Object source) {
-			if (source.getClass().isAssignableFrom(this.target.getClass())) {
+			if (!source.getClass().isAssignableFrom(this.target.getClass())) {
 				throw new IllegalArgumentException("");
 			}
 			
@@ -50,7 +50,68 @@ public class ReflectionUtil {
 
 		@Override
 		protected void process(Object source, Field f) throws IllegalAccessException {
-			setAttributeValue(this.target, f.getName(), callback(f.getName(), getAttributeValue(source, f.getName())));
+			setAttributeValue(this.target, f, callback(f.getName(), getAttributeValue(source, f)));
 		}
 	}
+	
+	public static void setProxyAttributeValue(Object proxy, String className, String attributeName, Object value) {
+		try {
+			setAttributeValue(proxy, Class.forName(className).getDeclaredField(attributeName), value);
+		}
+		catch (NoSuchFieldException nsfe) {
+		}
+		catch (ClassNotFoundException e) {
+		}
+	}
+
+	public static void setAttributeValue(Object target, String attributeName, Object value) {
+		try {
+			setAttributeValue(target, target.getClass().getDeclaredField(attributeName), value);
+		}
+		catch (NoSuchFieldException nsfe) {
+			System.out.println();
+		}
+	}
+	
+	private static void setAttributeValue(Object target, Field attribute, Object value) {
+		try {
+			attribute.setAccessible(true);
+			attribute.set(target, value);
+		}
+		catch (IllegalAccessException iae) {
+			System.out.println();
+		}
+	}
+
+	public static Object getProxyAttributeValue(Object proxy, String className, String attributeName) {
+		try {
+			return getAttributeValue(proxy, Class.forName(className).getDeclaredField(attributeName));
+		}
+		catch (NoSuchFieldException nsfe) {
+			return null;
+		}
+		catch (ClassNotFoundException e) {
+			return null;
+		}
+	}
+
+	public static Object getAttributeValue(Object target, String attributeName) {
+		try {
+			return getAttributeValue(target, target.getClass().getDeclaredField(attributeName));
+		}
+		catch (NoSuchFieldException nsfe) {
+			return null;
+		}
+	}
+
+	private static Object getAttributeValue(Object target, Field attribute) {
+		try {
+			attribute.setAccessible(true);
+			return attribute.get(target);
+		}
+		catch (IllegalAccessException iae) {
+			return null;
+		}
+	}
+	
 }
