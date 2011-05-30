@@ -11,25 +11,32 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 import com.wrenched.core.domain.LazyAttribute;
+import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
+
+import static com.wrenched.util.ReflectionUtil.*;
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
 
+/**
+ * 
+ * @author konkere
+ *
+ */
 public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 	private static final String LOAD = "__load";
 	private static final String LOADING = "__loading";
 
-	private String clazz;
 	private Object id;
+	private LazyAttributeRegistryDescriptor def;
 	private boolean started = false;
 	
 	private Map<String, Boolean> loading = new HashMap<String, Boolean>();
 	private Map<String, Boolean> loaded = new HashMap<String, Boolean>();
 	
-
-	LazyInterceptor(String className, Object id, String[] attributes) {
-		this.clazz = className;
-		this.id = id;
+	LazyInterceptor(LazyAttributeRegistryDescriptor arg0, Object arg1) {
+		this.id = arg1;
+		this.def = arg0;
 		
-		for (String attributeName : attributes) {
+		for (String attributeName : def.attributes) {
 			this.createLoader(attributeName);
 		}
 	}
@@ -42,7 +49,7 @@ public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 	@Override
 	public Object invoke(Object arg0, Method arg1, Method arg2, Object[] arg3) throws Throwable {
 		this.load(arg0, arg1);
-		return arg1.invoke(arg0, arg3);
+		return arg2.invoke(arg0, arg3);
 	}
 
 	private void load(Object arg0, Method arg1) throws Throwable {
@@ -53,9 +60,11 @@ public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 	            this.loading.put(getLoadingFlagName(attributeName), true);
 	                           
 	            //if the attribute has data, perhaps it's better to keep it
-	            if (isEmpty(getAttributeValue(arg0, attributeName))) {
+	            if (isEmpty(getProxyAttributeValue(arg0, def.className, attributeName))) {
 					this.process(arg0,
-							LazyAttributeRegistry.getInstance().load(this.clazz, this.id, attributeName));
+							LazyAttributeRegistry.getInstance().load(this.def.className,
+									this.id,
+									attributeName));
 	            }
 	            else {
 	                this.deleteLoader(attributeName);
@@ -73,41 +82,27 @@ public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 		started = false;
 	}
 	
-	/**
-	 * checks if an attribute must be lazy loaded (or in other terms
-	 * has a loader function)
-	 */
 	private boolean isAttributeLoaded(String attributeName) {
 		return this.loaded.get(getLoaderName(attributeName));
 	}
 	
-	/**
-	 * checks if at attribute is being loaded already (safety as
-	 * flex tends to call attribute getters hundreds of times).
-	 */
 	private boolean isLoading(String attributeName) {
 		return this.loading.containsKey(getLoadingFlagName(attributeName)) &&
 			this.loading.get(getLoadingFlagName(attributeName));
 	}
 	
-	/**
-	 * creates a dynamic loader function for an attribute
-	 */
 	private void createLoader(String attributeName) {
 		this.loaded.put(getLoaderName(attributeName), false);
 		this.loading.put(getLoadingFlagName(attributeName), false);
 	}
 	
-	/**
-	 * deletes loader function
-	 */
 	private void deleteLoader(String attributeName) {
 		this.loaded.remove(getLoaderName(attributeName));
 		this.loading.remove(getLoadingFlagName(attributeName));
 	}
 	
     private void process(Object target, LazyAttribute la) { 
-        setAttributeValue(target, la.getAttributeName(), la.getAttributeValue());
+        setProxyAttributeValue(target, this.def.className, la.getAttributeName(), la.getAttributeValue());
         this.deleteLoader(la.getAttributeName()); 
     } 
 	
