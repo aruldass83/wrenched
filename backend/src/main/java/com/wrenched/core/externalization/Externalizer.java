@@ -106,13 +106,6 @@ public class Externalizer {
 	 * @param <T>
 	 */
 	private abstract class SelectiveOperation<T> extends Operation<Field> {
-		protected final ThreadLocal<T> delegate = new ThreadLocal<T>();
-		
-		void setDelegate(T arg0) {
-			if (this.delegate.get() == null) {
-				this.delegate.set(arg0);
-			}
-		}
 		
 		/**
 		 * performs an operation on a primitive {@code f} of {@code t}
@@ -136,9 +129,6 @@ public class Externalizer {
 		 */
 		@Override
 		public final void process(Object t, Field f) throws IllegalAccessException {
-			if (this.delegate.get() == null) {
-				throw new RuntimeException("no delegate is set for current thread!");
-			}
 			if (f.getType().isPrimitive()) {
 				this.doPrimitive(t, f);
 			}
@@ -147,101 +137,6 @@ public class Externalizer {
 			}
 		}
 	}
-	
-	/**
-	 * thread-safe stream reader
-	 */
-	private final SelectiveOperation<ObjectInput> READER =
-		new SelectiveOperation<ObjectInput>() {
-			@Override
-			public void doObject(Object t, Field f) throws IllegalAccessException {
-				try {
-					Object o = this.delegate.get().readObject();
-					
-					if (o != null) {
-						logger.info("converting " + o.getClass().getCanonicalName() + " to " + f.getType().getCanonicalName());
-						o = configuration.findConverter(o.getClass()).convert(o, f.getType());
-					}
-					
-					f.set(t, o);
-				}
-				catch (ClassNotFoundException e) {
-					f.set(t, null);
-				}
-				catch (IllegalArgumentException iae) {
-					f.set(t, null);
-					report(t, f, iae);
-				}
-				catch (IOException ioe) {
-					f.set(t, null);
-					report(t, f, ioe);
-				}
-			}
-	
-			@Override
-			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
-				try {
-					readPrimitive(t, f, this.delegate.get());
-				}
-				catch (IOException ioe) {
-					report(t, f, ioe);					
-				}
-			}
-			
-			@Override
-			public boolean isRelevant(Field f) {
-				return Externalizer.this.isRelevant(f);
-			}
-			
-			@Override
-			public Field[] getFields(Object t) {
-				Collection<Field> result = getDeclaredFields(t);
-				return result.toArray(new Field[result.size()]);
-			}
-		};
-	
-	/**
-	 * thread-safe stream-writer
-	 */
-	private final SelectiveOperation<ObjectOutput> WRITER =
-		new SelectiveOperation<ObjectOutput>() {
-			@Override
-			public void doObject(Object t, Field f) throws IllegalAccessException {
-				Object o = f.get(t);
-				
-				if (o != null) {
-					o = configuration.findConverter(o.getClass()).convert(o, Externalizable.class);
-				}
-				
-				try {
-					this.delegate.get().writeObject(o);
-				}
-				catch (IOException ioe) {
-					report(t, f, ioe);
-				}
-			}
-	
-			@Override
-			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
-				try {
-					writePrimitive(t, f, this.delegate.get());
-				}
-				catch (IOException ioe) {
-					report(t, f, ioe);
-				}
-			}
-	
-			@Override
-			public boolean isRelevant(Field f) {
-				return Externalizer.this.isRelevant(f);
-			}
-			
-			@Override
-			public Field[] getFields(Object t) {
-				Collection<Field> result = getDeclaredFields(t);
-				return result.toArray(new Field[result.size()]);
-			}
-		};
 	
 	/**
 	 * get all declared and inherited fields of {@code target} 
@@ -312,8 +207,53 @@ public class Externalizer {
 			this.readEntityHeader(in);
 		}
 
-		READER.setDelegate(in);
-		READER.introspect(target);
+		new SelectiveOperation<ObjectInput>() {
+			@Override
+			public void doObject(Object t, Field f) throws IllegalAccessException {
+				try {
+					Object o = in.readObject();
+					
+					if (o != null) {
+						logger.info("converting " + o.getClass().getCanonicalName() + " to " + f.getType().getCanonicalName());
+						o = configuration.findConverter(o.getClass()).convert(o, f.getType());
+					}
+					
+					f.set(t, o);
+				}
+				catch (ClassNotFoundException e) {
+					f.set(t, null);
+				}
+				catch (IllegalArgumentException iae) {
+					f.set(t, null);
+					report(t, f, iae);
+				}
+				catch (IOException ioe) {
+					f.set(t, null);
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
+				try {
+					readPrimitive(t, f, in);
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);					
+				}
+			}
+			
+			@Override
+			public boolean isRelevant(Field f) {
+				return Externalizer.this.isRelevant(f);
+			}
+			
+			@Override
+			public Field[] getFields(Object t) {
+				Collection<Field> result = getDeclaredFields(t);
+				return result.toArray(new Field[result.size()]);
+			}
+		}.introspect(target);
 	}
 
 	/*
@@ -327,8 +267,44 @@ public class Externalizer {
 			this.writeEntityHeader(out);
 		}
 		
-		WRITER.setDelegate(out);
-		WRITER.introspect(target);
+		new SelectiveOperation<ObjectOutput>() {
+			@Override
+			public void doObject(Object t, Field f) throws IllegalAccessException {
+				Object o = f.get(t);
+				
+				if (o != null) {
+					o = configuration.findConverter(o.getClass()).convert(o, Externalizable.class);
+				}
+				
+				try {
+					out.writeObject(o);
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public void doPrimitive(Object t, Field f) throws IllegalAccessException {
+				try {
+					writePrimitive(t, f, out);
+				}
+				catch (IOException ioe) {
+					report(t, f, ioe);
+				}
+			}
+	
+			@Override
+			public boolean isRelevant(Field f) {
+				return Externalizer.this.isRelevant(f);
+			}
+			
+			@Override
+			public Field[] getFields(Object t) {
+				Collection<Field> result = getDeclaredFields(t);
+				return result.toArray(new Field[result.size()]);
+			}
+		}.introspect(target);
 	}
 
 	/**
