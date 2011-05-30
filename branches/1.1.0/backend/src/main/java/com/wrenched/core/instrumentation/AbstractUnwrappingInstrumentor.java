@@ -7,7 +7,7 @@ import java.util.Iterator;
 
 import com.wrenched.core.domain.LazyAttributeRegistryDescriptor;
 import com.wrenched.core.services.MetadataLoader;
-import com.wrenched.core.services.support.ClassIntrospectionUtil.Operation;
+import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
 
 /**
  * convenient implementation of unwrapping proxies and exposing
@@ -20,26 +20,36 @@ public abstract class AbstractUnwrappingInstrumentor implements ProxyInstrumento
 	 * (non-Javadoc)
 	 * @see com.wrenched.core.services.support.PersistentProxyInstrumentor#unwrap(java.lang.Object)
 	 */
-	public Object unwrap(Object o) throws NoSuchFieldException {
-		if (o == null) {
-			return o;
-		}
-		else if (this.isSimpleProxy(o)) {
-    		return evictProxies(this.getProxyTarget(o));
-    	}
-    	else if (this.isCollectionProxy(o)) {
-    		Iterator i = ((Collection)o).iterator();
-    		Collection implList = new ArrayList();
-    		
-    		while (i.hasNext()) {
-    			implList.add(evictProxies(i.next()));
-    		}
-    		return implList;
-    	}
-    	else {
-    		return evictProxies(o);
-    	}
-    }
+	public Object unwrap(Object o) {
+		return new ObjectProcessor() {
+			@Override
+			protected Object doProcess(Object obj, ObjectProcessor processor) {
+				return evictProxies(obj, processor);
+			}
+			
+			@SuppressWarnings({"rawtypes", "unchecked"})
+			@Override
+			public Object process(Object obj) {
+				Object t = obj;
+				
+				if (isSimpleProxy(t)) {
+		    		t = super.process(getProxyTarget(t));
+		    	}
+		    	else if (isCollectionProxy(t)) {
+		    		//TODO: only works with lists
+					Iterator i = ((Collection)t).iterator();
+		    		Collection implList = new ArrayList();
+		    		
+		    		while (i.hasNext()) {
+		    			implList.add(super.process(i.next()));
+		    		}
+		    		t = implList;
+		    	}
+				
+				return super.process(t);
+			}
+		}.process(o);
+	}
     
     /**
      * simple way of eliminating proxies by forcing them to <code>null</code>.
@@ -47,41 +57,26 @@ public abstract class AbstractUnwrappingInstrumentor implements ProxyInstrumento
      * @return
      * @throws NoSuchFieldException
      */
-    protected Object evictProxies(Object o) throws NoSuchFieldException {
+    protected Object evictProxies(Object o, final ObjectProcessor processor) {
     	final LazyAttributeRegistryDescriptor def = MetadataLoader.getInstance().getManagedClass(o.getClass());
     	
-    	if (def != null) {
-    		new Operation<Field>() {
-				@Override
-				public void process(Object t, Field f) throws IllegalAccessException {
-					f.set(t, null);
-				}
+		new Operation<Field>() {
+			@Override
+			public void process(Object t, Field f) throws IllegalAccessException {
+				f.set(t, ((def != null) ? null : processor.process(f.get(t))));
+			}
 
-				@Override
-				public boolean isRelevant(Field f) {
-					return def.attributes.contains(f.getName());
-				}
+			@Override
+			public boolean isRelevant(Field f) {
+				return (def == null) || def.attributes.contains(f.getName());
+			}
 
-				@Override
-				public Field[] getFields(Object t) {
-					return t.getClass().getDeclaredFields();
-				}
-    		}.introspect(o);
-    		
-//	    	for (String attributeName : def.attributes) {
-//				try {
-//		    		Field f = o.getClass().getDeclaredField(attributeName);
-//		    		f.setAccessible(true);
-//		    		f.set(o, null);
-//				}
-//				catch (IllegalArgumentException e) {
-//					//not possible
-//				}
-//				catch (IllegalAccessException e) {
-//					//not possible
-//				}
-//	    	}
-    	}    	
+			@Override
+			public Field[] getFields(Object t) {
+				Collection<Field> fields = getAllFields(t.getClass(), false);
+				return fields.toArray(new Field[fields.size()]);
+			}
+		}.introspect(o);
 
     	return o;
     }
