@@ -3,6 +3,7 @@ package com.wrenched.core.services;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.target.SingletonTargetSource;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 import com.wrenched.core.lazy.LazyAttributeRegistry;
@@ -11,7 +12,15 @@ public class ServiceProxyFactoryBeanWrapper extends AbstractFactoryBean implemen
 	private Object delegate;
 
 	protected Object createInstance() throws Exception {
-		return new ProxyFactory(getObjectType(), this).getProxy();
+		ProxyFactory pf =
+			new ProxyFactory(getObjectType(), new SingletonTargetSource(delegate) {
+				@Override
+				public Class getTargetClass() {
+					return getObjectType();
+				}
+			});
+		pf.addAdvice(this);
+		return pf.getProxy();
 	}
 
 	public Class getObjectType() {
