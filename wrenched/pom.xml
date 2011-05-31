@@ -6,6 +6,15 @@
 	<packaging>pom</packaging>
 	<version>1</version>
 	<name>Wrenched Core project bundle</name>
+	<description>Flex/Java framework that provides lazy-loading and externalization support</description>
+	<url>http://wrenched.googlecode.com</url>
+	<licenses>
+		<license>
+			<name>GPL v3.0</name>
+			<url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 	<properties>
 		<wrenched.version>1.1.0A</wrenched.version>
 		<spring.version>2.5.6.SEC01</spring.version>
@@ -27,6 +36,14 @@
 		<url>http://code.google.com/p/wrenched/source/browse/</url>
 		<tag>wrenched-1.0</tag>
 	</scm>
+	
+	<developers>
+		<developer>
+			<id>konkere</id>
+			<name>i.Zh</name>
+			<email>ikonkere@gmail.com</email>
+		</developer>
+	</developers>
 	<build>
 		<plugins>
 			<plugin>
@@ -39,5 +56,41 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+					</configuration>
+				</plugin>
+				<plugin>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>2.1.2</version>
+					<executions>
+						<execution>
+							<id>attach-sources</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>jar-no-fork</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>attach-javadoc</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>jar</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 </project>
