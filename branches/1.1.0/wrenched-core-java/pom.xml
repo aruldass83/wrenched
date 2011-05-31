@@ -9,7 +9,7 @@
 	<groupId>com.wrenched.core</groupId>
 	<artifactId>wrenched-core-java</artifactId>
 	<version>${wrenched.version}</version>
-	<name>Wrenched Core support for pure Java</name>
+	<name>Wrenched Core for Java clients</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework</groupId>

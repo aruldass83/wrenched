@@ -5,7 +5,7 @@
 	<artifactId>wrenched-core-swc</artifactId>
 	<packaging>swc</packaging>
 	<version>${wrenched.version}</version>
-	<name>Wrenched Core for ActionScript3</name>
+	<name>Wrenched Core for ActionScript3 clients</name>
 	<parent>
 		<groupId>com.wrenched.core</groupId>
 		<artifactId>wrenched</artifactId>
