@@ -20,10 +20,8 @@ package com.wrenched.core.lazy {
 
 	import org.floxy.IProxyRepository;
 	import org.floxy.ProxyRepository;
+	import org.flemit.reflection.Type;
 	import org.granite.collections.IMap;
-	import org.granite.reflect.AmbiguousClassNameError;
-	import org.granite.reflect.ClassNotFoundError;
-	import org.granite.reflect.Type;
 	import org.granite.util.Enum;
 
 	/**
@@ -39,7 +37,7 @@ package com.wrenched.core.lazy {
 		private var lazyAttributeLoader:RemoteObject;
 		private static var classes:Object = new Object();
 		private static var proxyRepository:IProxyRepository = new ProxyRepository();
-		private static const proxyDomain = new ApplicationDomain(ApplicationDomain.currentDomain); 
+		private static const proxyDomain:ApplicationDomain = new ApplicationDomain(ApplicationDomain.currentDomain); 
 		private static var _instance:LazyAttributeRegistry;
 
 		public static function instance(loader:RemoteObject=null):LazyAttributeRegistry {
@@ -78,10 +76,6 @@ package com.wrenched.core.lazy {
 		* to be available for later proxying.
 		*/
 		public static function registerClass(clazz:Class, entityIdName:Object, attributeName:String, force:Boolean=true):void {
-			if (!Type.isDomainRegistered(proxyDomain)) {
-				Type.registerDomain(proxyDomain);                      
-			} 
-
 			var className:String = getQualifiedClassName(clazz);
 
 			if (!ReflectionUtil.hasProperty(clazz, attributeName)) {
@@ -117,11 +111,11 @@ package com.wrenched.core.lazy {
 		*/
 		static function getRegisteredClassName(obj:Object):String {
 			var className:String = null;
-			var type:Type = Type.forInstance(obj, ApplicationDomain.currentDomain);
+			var type:Type = Type.getType(obj);
 
-			while (!(className && classes.hasOwnProperty(className)) && type) {
-				className = type.name;
-				type = type.superclass;
+			while (!(className && classes.hasOwnProperty(className)) && type != null && (type != Type.getType(Object))) {
+				className = getQualifiedClassName(type.classDefinition);
+				type = type.baseType;
 			}
 
 			return classes.hasOwnProperty(className) ? className : null;
@@ -136,8 +130,10 @@ package com.wrenched.core.lazy {
 		*/
 		function load(className:String, id:Object, attributeName:String, responder:IResponder):void {
 			trace("LOAD", className, id, attributeName);
+			
+			var alias:String = ReflectionUtil.getClassAlias(proxyDomain.getDefinition(className) as Class);
 			var token:AsyncToken =
-				lazyAttributeLoader.loadAttribute(Type.forName(className, proxyDomain).alias, id, attributeName);
+				lazyAttributeLoader.loadAttribute(alias, id, attributeName);
 			token.addResponder(responder);
 		}
 
