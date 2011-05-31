@@ -18,6 +18,12 @@ import com.caucho.hessian.io.SerializerFactory;
 import com.wrenched.core.externalization.io.HessianInputStream;
 import com.wrenched.core.externalization.io.HessianOutputStream;
 
+/**
+ * convenience implementation of HTTP-invoker remoting that uses Hessian instead of
+ * Java Serialization API
+ * @author konkere
+ *
+ */
 public class HttpInvokerClientInterceptorWrapper extends HttpInvokerProxyFactoryBean {
 	private final HessianProxyFactory proxyFactory = new HessianProxyFactory();
 
@@ -32,16 +38,22 @@ public class HttpInvokerClientInterceptorWrapper extends HttpInvokerProxyFactory
 		proxyFactory.setHessian2Request(true);
 	}
 	
+	/**
+	 * @see org.springframework.remoting.httpinvoker.SimpleHttpInvokerRequestExecutor
+	 */
 	private class SimpleHttpInvokerRequestExecutorWrapper extends SimpleHttpInvokerRequestExecutor {
-		protected final RemoteInvocationResult readRemoteInvocationResult(
-				InputStream is, String codebaseUrl) throws IOException,
-				ClassNotFoundException {
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.remoting.httpinvoker.AbstractHttpInvokerRequestExecutor#readRemoteInvocationResult(java.io.InputStream, java.lang.String)
+		 */
+		@Override
+		protected final RemoteInvocationResult readRemoteInvocationResult(InputStream is, String codebaseUrl)
+		throws IOException,	ClassNotFoundException {
 			ObjectInput oi = new HessianInputStream(proxyFactory.getHessianInput(is));
 			try {
 				Object obj = oi.readObject();
 				if (!(obj instanceof RemoteInvocationResult)) {
-					throw new RemoteException(
-							"Deserialized object needs to be assignable to type ["
+					throw new RemoteException("Deserialized object needs to be assignable to type ["
 									+ RemoteInvocationResult.class.getName()
 									+ "]: " + obj);
 				}
@@ -52,6 +64,11 @@ public class HttpInvokerClientInterceptorWrapper extends HttpInvokerProxyFactory
 			}
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.remoting.httpinvoker.AbstractHttpInvokerRequestExecutor#writeRemoteInvocation(org.springframework.remoting.support.RemoteInvocation, java.io.OutputStream)
+		 */
+		@Override
 		protected final void writeRemoteInvocation(RemoteInvocation invocation, OutputStream os) throws IOException {
 			ObjectOutput oo = new HessianOutputStream(proxyFactory.getHessianOutput(os));
 			try {
@@ -64,6 +81,10 @@ public class HttpInvokerClientInterceptorWrapper extends HttpInvokerProxyFactory
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.remoting.httpinvoker.HttpInvokerClientInterceptor#getHttpInvokerRequestExecutor()
+	 */
 	@Override
 	public HttpInvokerRequestExecutor getHttpInvokerRequestExecutor() {
 		SimpleHttpInvokerRequestExecutor executor = new SimpleHttpInvokerRequestExecutorWrapper();

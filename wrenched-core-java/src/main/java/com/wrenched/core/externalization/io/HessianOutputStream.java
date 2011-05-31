@@ -8,6 +8,11 @@ import com.caucho.hessian.io.AbstractHessianOutput;
 import com.caucho.hessian.io.Hessian2Output;
 import com.caucho.hessian.io.SerializerFactory;
 
+/**
+ * convenience Hessian adapter to java serialization API
+ * @author konkere
+ *
+ */
 public class HessianOutputStream extends OutputStream implements ObjectOutput {
 	private AbstractHessianOutput delegate;
 	

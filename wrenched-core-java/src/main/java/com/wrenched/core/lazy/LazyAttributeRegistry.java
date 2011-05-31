@@ -1,12 +1,8 @@
 package com.wrenched.core.lazy;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
@@ -22,7 +18,8 @@ import static com.wrenched.util.ReflectionUtil.*;
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
 
 /**
- * 
+ * lazy attribute registry implementation for Java. keeps track of class definitions,
+ * creates and manages lazy-loaded proxies.
  * @author konkere
  *
  */
@@ -64,12 +61,19 @@ public class LazyAttributeRegistry {
 		}
 	}
 	
+	/**
+	 * calls remote LAL service
+	 * @param className
+	 * @param id
+	 * @param attributeName
+	 * @return
+	 * @throws IllegalAccessException
+	 */
 	LazyAttribute load(String className, Object id, String attributeName) throws IllegalAccessException {
 		return loader.loadAttribute(className, id, attributeName);
 	}
 	
 	public static Object createProxy(Object obj) {
-//		return createProxy(obj, new HashMap());
 		return new ObjectProcessor() {
 			@Override
 			protected Object doProcess(Object obj, ObjectProcessor processor) {
@@ -77,91 +81,13 @@ public class LazyAttributeRegistry {
 			}
 		}.process(obj);
 	}
-/*	
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static Object createProxy(Object obj, final Map context) {
-		if (obj == null || obj.getClass().isPrimitive() || obj instanceof Enum || obj instanceof String || obj instanceof Number) {
-		}
-		else if (context.containsKey(obj)) {
-			return context.get(obj);
-		}
-		else if (obj.getClass().isArray()) {
-			Object[] a = (Object[]) obj;
-			
-			for (int i = 0; i < a.length; i++) {
-				a[i] = createProxy(a[i], context);
-			}
-		}
-		else if (obj instanceof Collection) {
-			if (obj instanceof List) {
-				List l = (List) obj;
-				
-				for (int i = 0; i < l.size(); i++) {
-					l.set(i, createProxy(l.get(i), context));
-				}
-			}
-			else if (obj instanceof Set) {
-				Set s = (Set)obj;
-				
-				for (Object element : s.toArray(new Object[s.size()])) {
-					s.remove(element);
-					s.add(createProxy(element, context));
-				}
-			}
-		}
-		else if (obj instanceof Map) {
-			for (Entry element : (Set<Entry>)((Map)obj).entrySet()) {
-				element.setValue(createProxy(element.getValue(), context));
-			}
-		}
-		else {
-			LazyAttributeRegistryDescriptor def = classes.get(obj.getClass());
-			
-			context.put(obj, obj);
 
-			if (def != null) {
-				Object id = resolveId(obj, def.idName);
-
-				try {
-//						new LazyInterceptor(def.className,
-//								id,
-//								def.attributes.toArray(new String[def.attributes.size()]));
-					LazyInterceptor interceptor = new LazyInterceptor(def, id);
-					Object proxy = createProxy(Class.forName(def.className), interceptor);
-
-					context.put(proxy, proxy);
-					context.put(obj, proxy);
-
-					new CallbackCopyOperation(proxy, false) {
-						@Override
-						protected Object callback(String attributeName, Object attributeValue) {
-							return createProxy(attributeValue, context);
-						}
-					}.introspect(obj);
-					
-					interceptor.start();
-					
-					return proxy;
-				}
-				catch(Exception e) {
-					//can't create proxy, skip
-				}
-			}
-			else {
-				new CallbackCopyOperation(obj, false) {
-					@Override
-					protected Object callback(String attributeName, Object attributeValue) {
-						return createProxy(attributeValue, context);
-					}
-				}.introspect(obj);
-			}
-			
-			return context.get(obj);
-		}
-
-		return obj;
-	}
-*/
+	/**
+	 * creates and populates proxy for a lazy-loaded class
+	 * @param obj
+	 * @param processor
+	 * @return
+	 */
 	private static Object createProxy(Object obj, final ObjectProcessor processor) {
 		LazyAttributeRegistryDescriptor def = classes.get(obj.getClass());
 		
@@ -175,7 +101,7 @@ public class LazyAttributeRegistry {
 				new CallbackCopyOperation(proxy, false) {
 					@Override
 					protected Object callback(String attributeName, Object attributeValue) {
-						return processor.process/*createProxy*/(attributeValue/*, context*/);
+						return processor.process(attributeValue);
 					}
 				}.introspect(obj);
 				
@@ -191,7 +117,7 @@ public class LazyAttributeRegistry {
 			new CallbackCopyOperation(obj, false) {
 				@Override
 				protected Object callback(String attributeName, Object attributeValue) {
-					return processor.process/*createProxy*/(attributeValue/*, context*/);
+					return processor.process(attributeValue);
 				}
 			}.introspect(obj);
 		}
@@ -199,7 +125,15 @@ public class LazyAttributeRegistry {
 		return obj;
 	}
 	
-	static Object createProxy(Class clazz, MethodHandler handler) throws InstantiationException, IllegalAccessException {
+	/**
+	 * creates javassist proxy for a given class and method handler
+	 * @param clazz
+	 * @param handler
+	 * @return
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 */
+	private static Object createProxy(Class clazz, MethodHandler handler) throws InstantiationException, IllegalAccessException {
 		ProxyFactory factory = new ProxyFactory();
 		factory.setSuperclass(clazz);
 		factory.setFilter(GETSET_FILTER);
@@ -209,6 +143,12 @@ public class LazyAttributeRegistry {
 		return proxy;
 	}
 	
+	/**
+	 * resolves object's "id", mostly used for persistence-based lazy-loading
+	 * @param obj
+	 * @param idName
+	 * @return
+	 */
 	private static Object resolveId(Object obj, Object idName) {
 		if (idName instanceof String) {			
 			if ("self".equals(idName)) {

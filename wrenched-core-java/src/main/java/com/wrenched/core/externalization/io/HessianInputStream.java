@@ -9,6 +9,11 @@ import com.caucho.hessian.io.AbstractHessianInput;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.SerializerFactory;
 
+/**
+ * convenience Hessian adapter to java serialization API
+ * @author konkere
+ *
+ */
 public class HessianInputStream extends InputStream implements ObjectInput {
 	private AbstractHessianInput delegate;
 	
@@ -27,17 +32,6 @@ public class HessianInputStream extends InputStream implements ObjectInput {
 
 	public void readFully(byte[] b) throws IOException {
 		throw new UnsupportedOperationException("can't skip bytes on this stream!");
-		/*
-		if (b != null) {
-			byte[] arr = delegate.readBytes();
-			
-			if (b.length == arr.length) {
-				for (int i = 0; i < b.length; i++) {
-					b[i] = arr[i];
-				}
-			}
-		}
-		*/
 	}
 
 	public void readFully(byte[] b, int off, int len) throws IOException {
