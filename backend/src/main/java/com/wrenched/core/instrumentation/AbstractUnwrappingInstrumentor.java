@@ -31,8 +31,10 @@ public abstract class AbstractUnwrappingInstrumentor implements ProxyInstrumento
 			@Override
 			public Object process(Object obj) {
 				Object t = obj;
-				
-				if (isSimpleProxy(t)) {
+				if (t == null) {
+					//just a safety check
+				}
+				else if (isSimpleProxy(t)) {
 		    		t = super.process(getProxyTarget(t));
 		    	}
 		    	else if (isCollectionProxy(t)) {
