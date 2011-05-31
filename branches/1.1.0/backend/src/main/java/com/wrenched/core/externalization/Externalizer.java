@@ -8,8 +8,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 
-import javax.persistence.Entity;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -17,7 +15,8 @@ import com.wrenched.core.services.support.ClassIntrospectionUtil.Operation;
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.getAllFields;
 
 /**
- * Externalization support
+ * Externalization support. mainly used for BlazeDS, but can be useful in
+ * other cases also.
  * @author konkere
  *
  */
@@ -138,10 +137,12 @@ public class Externalizer {
 		}
 	}
 	
+	public Configuration getConfiguration() {
+		return this.configuration;
+	}
+	
 	/**
 	 * get all declared and inherited fields of {@code target} 
-	 * and optionally sort them alphabetically as GAS3 does with generated
-	 * actionscript classes. note that superclass fields go first. 
 	 * @param target
 	 * @return
 	 */
@@ -163,39 +164,6 @@ public class Externalizer {
 		Modifier.isTransient(f.getModifiers()));
 	}
 	
-	/**
-	 * checks if the object considered is an entity, for which GAS3
-	 * generates some metainfo, which normally we don't need, but we have
-	 * to deal with it
-	 * @param t
-	 * @return
-	 * @see #readEntityHeader(ObjectInput)
-	 * @see #writeEntityHeader(ObjectOutput)
-	 */
-	private boolean isEntity(Object t) {
-		return t.getClass().getAnnotation(Entity.class) != null;
-	}
-
-	protected void readEntityHeader(ObjectInput in) throws IOException {
-		try {
-			//__initialized
-			in.readObject();
-			//__detachedState
-			in.readObject();
-		}
-		catch (ClassNotFoundException cnfe) {
-			//should not happen
-			logger.error(cnfe.getMessage(), cnfe);
-		}
-	}
-	
-	protected void writeEntityHeader(ObjectOutput out) throws IOException {
-		//__initialized
-		out.writeObject(Boolean.TRUE);
-		//__detachedState
-		out.writeObject("");
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
@@ -203,10 +171,6 @@ public class Externalizer {
 	public void readExternal(Object target, final ObjectInput in) throws IOException {
 		logger.debug("reading " + target.getClass().getCanonicalName());
 		
-		if (this.isEntity(target) && this.configuration.useGAS3()) {
-			this.readEntityHeader(in);
-		}
-
 		new SelectiveOperation<ObjectInput>() {
 			@Override
 			public void doObject(Object t, Field f) throws IllegalAccessException {
@@ -262,10 +226,6 @@ public class Externalizer {
 	 */
 	public void writeExternal(Object target, final ObjectOutput out) throws IOException {
 		logger.debug("writing " + target.getClass().getCanonicalName());
-		
-		if (this.isEntity(target) && this.configuration.useGAS3()) {
-			this.writeEntityHeader(out);
-		}
 		
 		new SelectiveOperation<ObjectOutput>() {
 			@Override
