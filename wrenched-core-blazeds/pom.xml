@@ -8,7 +8,7 @@
 	</parent>
 	<groupId>com.wrenched.core</groupId>
 	<artifactId>wrenched-core-blazeds</artifactId>
-	<name>Wrenched Core support for BlazeDS</name>
+	<name>Wrenched Core server-side support for BlazeDS</name>
 	<version>${wrenched.version}</version>
 	<dependencies>
 		<dependency>
