@@ -5,7 +5,7 @@
 	<artifactId>wrenched-core-swc</artifactId>
 	<packaging>swc</packaging>
 	<version>${wrenched.version}</version>
-	<name>Wrenched Core for ActionScript3</name>
+	<name>Wrenched Core for ActionScript3 clients</name>
 	<parent>
 		<groupId>com.wrenched.core</groupId>
 		<artifactId>wrenched</artifactId>
@@ -19,30 +19,7 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>sonatype-forge</id>
-			<url>http://repository.sonatype.org/content/repositories/forge/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
 	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>sonatype</id>
-			<url>http://repository.sonatype.org/content/groups/public/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>sonatype-forge</id>
-			<url>http://repository.sonatype.org/content/repositories/forge/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
 	<dependencies>
 		<dependency>
 			<groupId>com.wrenched.core</groupId>
@@ -52,16 +29,17 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.wrenched.core</groupId>
+			<artifactId>wrenched-core-blazeds</artifactId>
+			<version>${wrenched.version}</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.adobe.flex.framework</groupId>
 			<artifactId>flex-framework</artifactId>
 			<version>${flex.version}</version>
 			<type>pom</type>
-		</dependency>
-		<dependency>
-			<groupId>org.graniteds</groupId>
-			<artifactId>granite-swc</artifactId>
-			<version>2.1.0.GA</version>
-			<type>swc</type>
 		</dependency>
 		<dependency>
 			<groupId>org.flemit</groupId>
@@ -98,6 +76,20 @@
 							</includeJavaClasses>
 						</configuration>
 					</execution>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>sources</goal>
+						</goals>
+						<phase>verify</phase>
+					</execution>
+					<execution>
+						<id>attach-asdoc</id>
+						<goals>
+							<goal>asdoc</goal>
+						</goals>
+						<phase>verify</phase>
+					</execution>
 				</executions>
 				<configuration>
 					<accessible>true</accessible>
@@ -124,6 +116,22 @@
 						<type>pom</type>
 					</dependency>
 				</dependencies>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<phase>verify</phase>
+					</execution>
+				</executions>
+					<configuration>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
