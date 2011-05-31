@@ -84,7 +84,7 @@ public class ClassIntrospectionUtil {
 	}
 
 	/**
-	 * synthetic introspectino operation that doesn't require actual reflection access with fields it
+	 * synthetic introspection operation that doesn't require actual reflection access with fields it
 	 * introspect.
 	 * @author konkere
 	 *
@@ -197,6 +197,60 @@ public class ClassIntrospectionUtil {
 			}
 	
 			return obj;
+		}
+	}
+	
+	public static abstract class HierarchyTraverser<T> {
+		/**
+		 * returns either a desired object or null if
+		 * given class is not relevant
+		 * @param clazz
+		 * @return
+		 */
+		protected abstract T processMatch(Class clazz);
+		
+		public T traverse(Class clazz) {
+			return traverseSuperclass(clazz);
+		}
+		
+		/**
+		 * ascends through superclasses
+		 * @param clazz
+		 * @return
+		 */
+		protected T traverseSuperclass(Class clazz) {
+			T c = null;
+			Class tmp = clazz;
+			
+			while (c == null && tmp != null) {
+				c = traverseInterfaces(tmp);
+				tmp = tmp.getSuperclass();
+			}
+			
+			return c;
+		}
+
+		/**
+		 * recursively traverses interfaces. note that there's no particular order
+		 * of interfaces and therefore no guaranty of finding a particular one
+		 * if several converters potentially exist.
+		 * @param clazz
+		 * @return
+		 */
+		protected T traverseInterfaces(Class clazz) {
+			T c = this.processMatch(clazz);
+			
+			if (c != null) {
+				return c;
+			}
+			
+			Class[] is = clazz.getInterfaces();
+			
+			for (int i = 0; i < is.length && c == null; i++) {
+				c = traverseInterfaces(is[i]);
+			}
+			
+			return c;
 		}
 	}
 	
