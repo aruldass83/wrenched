@@ -17,7 +17,7 @@ import static com.wrenched.util.ReflectionUtil.*;
 import static com.wrenched.core.services.support.ClassIntrospectionUtil.*;
 
 /**
- * 
+ * interceptor that handles lazy-loading
  * @author konkere
  *
  */
@@ -41,17 +41,32 @@ public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
+	 */
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		this.load(invocation.getThis(), invocation.getMethod());
         return invocation.proceed();                  
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see javassist.util.proxy.MethodHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.reflect.Method, java.lang.Object[])
+	 */
 	@Override
 	public Object invoke(Object arg0, Method arg1, Method arg2, Object[] arg3) throws Throwable {
 		this.load(arg0, arg1);
 		return arg2.invoke(arg0, arg3);
 	}
 
+	/**
+	 * runs various checks on {@code arg1} to see if it's a suitable accessor for a lazy-loaded
+	 * field and delegates to registry to load it.
+	 * @param arg0
+	 * @param arg1
+	 * @throws Throwable
+	 */
 	private void load(Object arg0, Method arg1) throws Throwable {
 	    if (this.started) {
 	        String attributeName = getAttributeName(arg1);
@@ -101,6 +116,11 @@ public class LazyInterceptor implements MethodInterceptor, MethodHandler {
 		this.loading.remove(getLoadingFlagName(attributeName));
 	}
 	
+	/**
+	 * attaches lazy attribute value to its target object
+	 * @param target
+	 * @param la
+	 */
     private void process(Object target, LazyAttribute la) { 
         setProxyAttributeValue(target, this.def.className, la.getAttributeName(), la.getAttributeValue());
         this.deleteLoader(la.getAttributeName()); 

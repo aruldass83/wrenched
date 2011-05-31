@@ -20,6 +20,12 @@ import com.wrenched.core.externalization.io.HessianInputStream;
 import com.wrenched.core.externalization.io.HessianOutputStream;
 import com.wrenched.core.instrumentation.ProxyInstrumentor;
 
+/**
+ * convenience implementation of HTTP-invoker remoting that uses Hessian instead of
+ * Java Serialization API
+ * @author konkere
+ *
+ */
 public class HttpInvokerServiceExporterWrapper extends HttpInvokerServiceExporter {
 	private final HessianProxyFactory proxyFactory = new HessianProxyFactory();
 	private final ProxyInstrumentor instrumentor;
@@ -40,14 +46,18 @@ public class HttpInvokerServiceExporterWrapper extends HttpInvokerServiceExporte
 		proxyFactory.setHessian2Request(true);
 	}
 	
-	protected RemoteInvocation readRemoteInvocation(HttpServletRequest request,
-			InputStream is) throws IOException, ClassNotFoundException {
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter#readRemoteInvocation(javax.servlet.http.HttpServletRequest, java.io.InputStream)
+	 */
+	@Override
+	protected RemoteInvocation readRemoteInvocation(HttpServletRequest request, InputStream is)
+	throws IOException, ClassNotFoundException {
 		ObjectInput oi = new HessianInputStream(proxyFactory.getHessianInput(is));
 		try {
 			Object obj = oi.readObject();
 			if (!(obj instanceof RemoteInvocation)) {
-				throw new RemoteException(
-						"Deserialized object needs to be assignable to type ["
+				throw new RemoteException("Deserialized object needs to be assignable to type ["
 								+ RemoteInvocation.class.getName() + "]: " + obj);
 			}
 			return (RemoteInvocation) obj;
@@ -56,12 +66,18 @@ public class HttpInvokerServiceExporterWrapper extends HttpInvokerServiceExporte
 		}
 	}
 
-	protected final void writeRemoteInvocationResult(
-			HttpServletRequest request, HttpServletResponse response, RemoteInvocationResult result, OutputStream os)
-			throws IOException {
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter#writeRemoteInvocationResult(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, org.springframework.remoting.support.RemoteInvocationResult, java.io.OutputStream)
+	 */
+	@Override
+	protected final void writeRemoteInvocationResult(HttpServletRequest request, HttpServletResponse response,
+			RemoteInvocationResult result, OutputStream os)
+	throws IOException {
 		ObjectOutput oo = new HessianOutputStream(proxyFactory.getHessianOutput(os));
 		RemoteInvocationResult unwrap = result;
 
+		//instrument the result of invocation and remove proxies
 		try {
 			if (instrumentor != null) {
 				try {
