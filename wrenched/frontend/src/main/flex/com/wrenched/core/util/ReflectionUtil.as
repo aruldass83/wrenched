@@ -1,6 +1,7 @@
 package com.wrenched.core.util {
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
+	import flash.utils.describeType;
 	
 	import org.flemit.reflection.PropertyInfo;
 	import org.flemit.reflection.Type;
@@ -10,7 +11,7 @@ package com.wrenched.core.util {
 	 * @author konkere
 	 */
 	public class ReflectionUtil {
-		
+
 		/**
 		 * copies properties from source to destination using class information.
 		 */
@@ -63,6 +64,10 @@ package com.wrenched.core.util {
 		 */
 		public static function getClass(obj:Object):Class {
 			return getDefinitionByName(getQualifiedClassName(obj)) as Class;
+		}
+
+		public static function getClassAlias(o:Object):String {
+			return describeType(o).@alias;
 		}
 	}
 }
